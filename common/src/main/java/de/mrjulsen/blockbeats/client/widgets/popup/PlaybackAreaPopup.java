@@ -36,10 +36,11 @@ import de.mrjulsen.mcdragonlib.client.util.WidgetsCollection;
 import de.mrjulsen.mcdragonlib.core.EAlignment;
 import de.mrjulsen.mcdragonlib.util.TextUtils;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
 
 public class PlaybackAreaPopup extends PopupWidget {
 
@@ -152,7 +153,7 @@ public class PlaybackAreaPopup extends PopupWidget {
         int y = workingArea.getY() + 15 + 18 + radiusBox.getHeight();
         entityListBox = new DLListBox<>(x, y, Math.min(workingArea.getRight() - x - 10, 200), workingArea.getBottom() - y - 16, true);
         
-        Registry.ENTITY_TYPE.keySet().forEach(a -> entityListBox.add(new DLListBoxItemBuilder<ResourceLocation>(Registry.ENTITY_TYPE.get(a).getDescription(), Sprite.empty(), a, (b) -> {})));
+        BuiltInRegistries.ENTITY_TYPE.forEach(a -> entityListBox.add(new DLListBoxItemBuilder<ResourceLocation>(a.getDescription(), Sprite.empty(), EntityType.getKey(a), (b) -> {})));
         entityListBox.withOnSelectionChangedEvent((box) -> {
             selectedEntitiesCount = box.getSelectedCount();
             updateEntities();
@@ -310,7 +311,7 @@ public class PlaybackAreaPopup extends PopupWidget {
             if (x.getAssignedWidget() instanceof IDragonLibWidget wgt && !wgt.isMouseSelected()) {
                 return;
             }
-            GuiUtils.renderTooltipAt(getParent(), GuiAreaDefinition.of(x.getAssignedWidget()), x.getLines(), x.getMaxWidth() > 0 ? x.getMaxWidth() : getParent().width(), graphics, x.getAssignedWidget().x, x.getAssignedWidget().y + x.getAssignedWidget().getHeight(), mouseX, mouseY, 0, 0);  
+            GuiUtils.renderTooltipAt(getParent(), GuiAreaDefinition.of(x.getAssignedWidget()), x.getLines(), x.getMaxWidth() > 0 ? x.getMaxWidth() : getParent().width(), graphics, x.getAssignedWidget().getX(), x.getAssignedWidget().getY() + x.getAssignedWidget().getHeight(), mouseX, mouseY, 0, 0);  
         });
     }
 }

@@ -101,7 +101,7 @@ public class SoundFileWidget extends DLButton {
     }
 
     public void addTask(Sprite sprite, MutableComponent text, Consumer<SoundFileWidget> action) {
-        tasks.add(new Task(getParent(), new GuiAreaDefinition(x + width - 10 - 20 * taskIndex, y + height / 2 - 10, 20, 20), sprite, DLTooltip.of(text).assignedTo(this).withMaxWidth(width / 4), action));
+        tasks.add(new Task(getParent(), new GuiAreaDefinition(x() + width - 10 - 20 * taskIndex, y() + height / 2 - 10, 20, 20), sprite, DLTooltip.of(text).assignedTo(this).withMaxWidth(width / 4), action));
         taskIndex++;
     }
 

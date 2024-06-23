@@ -67,7 +67,7 @@ public class SoundPlayerPacket implements IPacketBase<SoundPlayerPacket> {
     @Override
     public void handle(SoundPlayerPacket packet, Supplier<PacketContext> contextSupplier) {
         contextSupplier.get().queue(() -> {
-            Level level = contextSupplier.get().getPlayer().getLevel();
+            Level level = contextSupplier.get().getPlayer().level();
             if (level.getBlockEntity(packet.pos) instanceof SoundPlayerBlockEntity be) {
                 be.setPlaylist(packet.playlist);
                 be.setRedstone(packet.redstone);

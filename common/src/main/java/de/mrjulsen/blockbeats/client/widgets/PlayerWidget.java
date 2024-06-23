@@ -60,7 +60,7 @@ public class PlayerWidget extends DLButton {
     }
 
     public void addTask(Sprite sprite, MutableComponent text, Consumer<PlayerWidget> action) {
-        tasks.add(new Task(getParent(), new GuiAreaDefinition(x + width - 18 * taskIndex, y + height / 2 - 9, 18, 18), sprite, DLTooltip.of(text).assignedTo(this).withMaxWidth(width), action));
+        tasks.add(new Task(getParent(), new GuiAreaDefinition(x() + width - 18 * taskIndex, y() + height / 2 - 9, 18, 18), sprite, DLTooltip.of(text).assignedTo(this).withMaxWidth(width), action));
         taskIndex++;
     }
 

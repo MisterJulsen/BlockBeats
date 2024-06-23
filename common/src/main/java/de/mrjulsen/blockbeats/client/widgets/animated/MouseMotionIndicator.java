@@ -2,17 +2,16 @@ package de.mrjulsen.blockbeats.client.widgets.animated;
 
 import org.lwjgl.glfw.GLFW;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-
 import de.mrjulsen.blockbeats.client.ModGuiIcons;
 import de.mrjulsen.mcdragonlib.client.ITickable;
 import de.mrjulsen.mcdragonlib.client.util.Graphics;
-import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 
-public class MouseMotionIndicator implements Widget, ITickable, GuiEventListener, NarratableEntry {
+public class MouseMotionIndicator implements Renderable, ITickable, GuiEventListener, NarratableEntry {
     
     private static final int MAX_SPRITES = 4;
     private static final int TICK_SPEED = 15;
@@ -58,8 +57,8 @@ public class MouseMotionIndicator implements Widget, ITickable, GuiEventListener
     }
 
     @Override
-    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
-        Graphics graphics = new Graphics(poseStack);
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        Graphics graphics = new Graphics(guiGraphics, guiGraphics.pose());
         if (showWaves) {
             switch (spriteIndex) {
                 case 0 -> {
@@ -133,5 +132,13 @@ public class MouseMotionIndicator implements Widget, ITickable, GuiEventListener
     @Override
     public NarrationPriority narrationPriority() {
         return NarrationPriority.NONE;
-    }    
+    }
+
+    @Override
+    public boolean isFocused() {
+        return false;
+    }
+
+    @Override
+    public void setFocused(boolean focused) {}
 }

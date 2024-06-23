@@ -3,7 +3,7 @@ package de.mrjulsen.blockbeats.core.data.playback;
 import java.util.Set;
 
 import de.mrjulsen.dragnsounds.core.data.IPlaybackArea;
-import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -13,7 +13,7 @@ public record EntityRidingPlaybackArea(Set<ResourceLocation> entityType, Vec3 ce
 
     @Override
     public boolean canPlayForPlayer(Level level, Player player) {
-        return center().distanceTo(player.position()) <= radius() && entityType().stream().anyMatch(x -> x.equals(Registry.ENTITY_TYPE.getKey(player.getVehicle().getType())));
+        return center().distanceTo(player.position()) <= radius() && entityType().stream().anyMatch(x -> x.equals(BuiltInRegistries.ENTITY_TYPE.getKey(player.getVehicle().getType())));
     }
     
 }

@@ -27,10 +27,10 @@
   ],
   "depends": {
     "fabricloader": ">=0.15.11",
-    "minecraft": "~1.18.2",
+    "minecraft": "~1.20.1",
     "java": ">=17",
-    "dragnsounds": ">=1.18.2-0.1.7",
-    "dragonlib": ">=1.18.2-2.1.11",
+    "dragnsounds": ">=1.20.1-0.1.7",
+    "dragonlib": ">=1.20.1-2.1.11",
     "fabric-api": "*"
   },
   "custom": {

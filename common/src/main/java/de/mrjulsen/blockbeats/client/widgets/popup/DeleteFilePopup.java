@@ -59,7 +59,7 @@ public class DeleteFilePopup extends PopupWidget {
     public void renderMainPopupLayer(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
         super.renderMainPopupLayer(graphics, mouseX, mouseY, partialTicks);
         DynamicGuiRenderer.renderWindow(graphics, guiLeft, guiTop, WIN_WIDTH, WIN_HEIGHT);
-        instructionLabel.renderLeftAlignedNoShadow(graphics.poseStack(), guiLeft + 10, guiTop + 25, font.lineHeight, DragonLib.NATIVE_UI_FONT_COLOR);
+        instructionLabel.renderLeftAlignedNoShadow(graphics.graphics(), guiLeft + 10, guiTop + 25, font.lineHeight, DragonLib.NATIVE_UI_FONT_COLOR);
         GuiUtils.drawString(graphics, font, guiLeft + 6, guiTop + 6, title, DragonLib.NATIVE_UI_FONT_COLOR, EAlignment.LEFT, false);
     }
 }

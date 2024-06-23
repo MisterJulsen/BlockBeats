@@ -46,7 +46,7 @@ public class ClientWrapper {
                 continue;
             }
             item.set_visible(true);
-            item.y = box.getY() + 1 + count * box.getItemHeight();
+            item.setY(box.getY() + 1 + count * box.getItemHeight());
             count++;
         }
         box.getScrollBar().updateMaxScroll(count * box.getItemHeight() + 2);

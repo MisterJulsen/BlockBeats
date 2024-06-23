@@ -25,7 +25,7 @@ public abstract class PopupWidget extends WidgetContainer {
 
     @Override
     public final void renderMainLayer(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
-        this.fillGradient(graphics.poseStack(), 0, 0, this.width, this.height, -1072689136, -804253680);
+        graphics.graphics().fillGradient(0, 0, this.width, this.height, -1072689136, -804253680);
         renderMainPopupLayer(graphics, mouseX, mouseY, partialTicks);
         super.renderMainLayer(graphics, mouseX, mouseY, partialTicks);
     }

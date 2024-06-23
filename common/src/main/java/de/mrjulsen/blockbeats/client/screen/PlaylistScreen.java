@@ -374,7 +374,7 @@ public class PlaylistScreen extends DLPopupScreen {
             return;
         }
         int i = tooltip.getLines().size() * (font.lineHeight + 1) + 8;
-        GuiUtils.renderTooltipAt(this, GuiAreaDefinition.of(tooltip.getAssignedWidget()), tooltip.getLines(), tooltip.getMaxWidth() > 0 ? tooltip.getMaxWidth() : this.width(), graphics, tooltip.getAssignedWidget().x, height - FOOTER_HEIGHT - i, mouseX, mouseY, 0, 0);  
+        GuiUtils.renderTooltipAt(this, GuiAreaDefinition.of(tooltip.getAssignedWidget()), tooltip.getLines(), tooltip.getMaxWidth() > 0 ? tooltip.getMaxWidth() : this.width(), graphics, tooltip.getAssignedWidget().getX(), height - FOOTER_HEIGHT - i, mouseX, mouseY, 0, 0);  
     }
     
 }

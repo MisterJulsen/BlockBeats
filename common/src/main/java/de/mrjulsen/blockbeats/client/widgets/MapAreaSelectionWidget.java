@@ -6,7 +6,7 @@ import java.util.function.BiConsumer;
 
 import org.lwjgl.glfw.GLFW;
 
-import com.mojang.math.Vector3f;
+import com.mojang.math.Axis;
 
 import de.mrjulsen.blockbeats.BlockBeats;
 import de.mrjulsen.blockbeats.client.ModGuiIcons;
@@ -140,12 +140,12 @@ public class MapAreaSelectionWidget extends WidgetContainer {
         }
         
         if (DLScreen.hasShiftDown()) {
-            mapSelectIndicator.render(graphics.poseStack(), mouseX, mouseY, partialTicks);
+            mapSelectIndicator.render(graphics.graphics(), mouseX, mouseY, partialTicks);
             ModGuiIcons.SHIFT_KEY.getAsSprite(16, 16).render(graphics,  mapSelectIndicator.getX() + 8, mapSelectIndicator.getY() + 16);
             GuiUtils.drawString(graphics, font, mapSelectIndicator.getX() + mapSelectIndicator.getWidgetWidth(), mapSelectIndicator.getY() + mapSelectIndicator.getWidgetHeight() / 2 - font.lineHeight / 2, textDrag, 0xFFFFFFFF, EAlignment.LEFT, true);
             GuiUtils.drawString(graphics, font, mapSelectIndicator.getX() + mapSelectIndicator.getWidgetWidth(), 16 + mapSelectIndicator.getY() + mapSelectIndicator.getWidgetHeight() / 2 - font.lineHeight / 2, textCancel, 0xFFFFFFFF, EAlignment.LEFT, true);
         } else {
-            mapDragIndicator.render(graphics.poseStack(), mouseX, mouseY, partialTicks);
+            mapDragIndicator.render(graphics.graphics(), mouseX, mouseY, partialTicks);
             ModGuiIcons.SHIFT_KEY.getAsSprite(16, 16).render(graphics, mapDragIndicator.getX(), mapDragIndicator.getY() + 16);
             ModGuiIcons.MOUSE_LEFT.getAsSprite(16, 16).render(graphics, mapDragIndicator.getX() + 16, mapDragIndicator.getY() + 16);
             ModGuiIcons.MOUSE_MIDDLE.getAsSprite(16, 16).render(graphics, mapDragIndicator.getX() + 8, mapDragIndicator.getY() + 32);
@@ -194,25 +194,25 @@ public class MapAreaSelectionWidget extends WidgetContainer {
             graphics.poseStack().translate(x, y, 0);
             
             if (rawX < getX() + getWidth() / 4 && rawY < getY() + getHeight() / 4) { // top left
-                graphics.poseStack().mulPose(Vector3f.ZP.rotationDegrees(90 + 45));
+                graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(90 + 45));
             } else if (rawX >= getX() + getWidth() / 4 && rawX <= getX() + getWidth() / 4 * 3 && rawY < getY() + getHeight() / 4) { // top
-                graphics.poseStack().mulPose(Vector3f.ZP.rotationDegrees(180));
+                graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(180));
             } else if (rawX > getX() + getWidth() / 4 * 3&& rawY < getY() + getHeight() / 4) { // top right
-                graphics.poseStack().mulPose(Vector3f.ZP.rotationDegrees(-90 - 45));
+                graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(-90 - 45));
             }
             
             else if (rawX < getX() + getWidth() / 4 && rawY >= getY() + getHeight() / 4 && rawY <= getY() + getHeight() / 4 * 3) { // left
-                graphics.poseStack().mulPose(Vector3f.ZP.rotationDegrees(90));
+                graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(90));
             } else if (rawX > getX() + getWidth() / 4 * 3 && rawY >= getY() + getHeight() / 4 && rawY <= getY() + getHeight() / 4 * 3) { // right
-                graphics.poseStack().mulPose(Vector3f.ZP.rotationDegrees(-90));
+                graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(-90));
             }
 
             else if (rawX < getX() + getWidth() / 4 && rawY > getY() + getHeight() / 4 * 3) { // bottom left
-                graphics.poseStack().mulPose(Vector3f.ZP.rotationDegrees(45));
+                graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(45));
             } else if (rawX >= getX() + getWidth() / 4 && rawX <= getX() + getWidth() / 4 * 3 && rawY > getY() + getHeight() / 4 * 3) { // bottom
-                graphics.poseStack().mulPose(Vector3f.ZP.rotationDegrees(0));
+                graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(0));
             } else if (rawX > getX() + getWidth() / 4 * 3 && rawY > getY() + getHeight() / 4 * 3) { // bottom right
-                graphics.poseStack().mulPose(Vector3f.ZP.rotationDegrees(-45));
+                graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(-45));
             }
 
             ModGuiIcons.MAP_POINTER.render(graphics, -8, -8);

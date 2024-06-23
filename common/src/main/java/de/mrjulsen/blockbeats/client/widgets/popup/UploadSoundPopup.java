@@ -229,7 +229,7 @@ public class UploadSoundPopup extends PopupWidget {
             if (x.getAssignedWidget() instanceof IDragonLibWidget wgt && !wgt.isMouseSelected()) {
                 return;
             }
-            GuiUtils.renderTooltipAt(getParent(), GuiAreaDefinition.of(x.getAssignedWidget()), x.getLines(), x.getMaxWidth() > 0 ? x.getMaxWidth() : getParent().width(), graphics, x.getAssignedWidget().x, x.getAssignedWidget().y + x.getAssignedWidget().getHeight(), mouseX, mouseY, 0, 0);  
+            GuiUtils.renderTooltipAt(getParent(), GuiAreaDefinition.of(x.getAssignedWidget()), x.getLines(), x.getMaxWidth() > 0 ? x.getMaxWidth() : getParent().width(), graphics, x.getAssignedWidget().getX(), x.getAssignedWidget().getY() + x.getAssignedWidget().getHeight(), mouseX, mouseY, 0, 0);  
         });
     }
 }
