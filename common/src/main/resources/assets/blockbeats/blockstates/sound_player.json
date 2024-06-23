@@ -1,0 +1,7 @@
+{
+    "variants": {
+      "": {
+        "model": "blockbeats:block/sound_player"
+      }
+    }
+  }

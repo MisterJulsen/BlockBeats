@@ -1,0 +1,44 @@
+modLoader = "javafml"
+loaderVersion = "[40,)"
+issueTrackerURL = "https://github.com/MisterJulsen/BlockBeats/issues"
+license = "GNU General Public License v3.0"
+
+[[mods]]
+modId = "blockbeats"
+version = "${version}"
+displayName = "BlockBeats"
+authors = "MrJulsen"
+credits="Based on DragNSounds API"
+displayURL = "https://github.com/MisterJulsen/BlockBeats"
+description = '''
+BlockBeats allows all players to upload their own music and sounds to the server in real time and play them there for all players at any time without having to load and update resource packs.
+'''
+logoFile = "icon.png"
+
+[[dependencies.blockbeats]]
+modId = "forge"
+mandatory = true
+versionRange = "[40,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.blockbeats]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.18.2,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.blockbeats]]
+modId = "dragonlib"
+mandatory = true
+versionRange = "[1.18.2-2.1.11,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.blockbeats]]
+modId = "dragnsounds"
+mandatory = true
+versionRange = "[1.18.2-0.1.7,)"
+ordering = "NONE"
+side = "BOTH"
