@@ -62,10 +62,10 @@ public final class BlockBeats {
             ClientEvents.init();
         }
 
+        ModCreativeModeTab.init();
         ModBlocks.init();
         ModBlockEntities.init();
         ModItems.init();
-        ModCreativeModeTab.init();
 
         networkManager = new NetworkManagerBase(MOD_ID, MOD_ID + "_network", List.of(
             // STC

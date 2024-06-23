@@ -12,16 +12,18 @@ import net.minecraft.world.item.ItemStack;
 
 public class ModCreativeModeTab {
 
-    public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create("modid", Registries.CREATIVE_MODE_TAB);
+    public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(BlockBeats.MOD_ID, Registries.CREATIVE_MODE_TAB);
     
     public static final RegistrySupplier<CreativeModeTab> MOD_TAB = TABS.register(new ResourceLocation(BlockBeats.MOD_ID, "tab"), 
-            () -> CreativeTabRegistry.create(
-                    TextUtils.translate("itemGroup.blockbeats.tab"),
-                    () -> new ItemStack(ModBlocks.SOUND_PLAYER.get())
-            )
+        () -> CreativeTabRegistry.create(
+                TextUtils.translate("itemGroup.blockbeats.tab"),
+                () -> new ItemStack(ModBlocks.SOUND_PLAYER.get())
+        )
     );
 
-    public static void init() { }
+    public static void init() {
+        TABS.register();
+    }
 }
 
 
