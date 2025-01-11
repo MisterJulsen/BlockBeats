@@ -5,11 +5,11 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import de.mrjulsen.blockbeats.net.callbacks.clinet.GetUsernameCacheCallback;
-import de.mrjulsen.mcdragonlib.net.IPacketBase;
+import de.mrjulsen.mcdragonlib.net.BaseNetworkPacket;
 import dev.architectury.networking.NetworkManager.PacketContext;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
-public class GetUsernameCacheResponsePacket implements IPacketBase<GetUsernameCacheResponsePacket> {
+public class GetUsernameCacheResponsePacket extends BaseNetworkPacket<GetUsernameCacheResponsePacket> {
 
     private long requestId;
     private Map<UUID, String> usernamecache;
@@ -22,13 +22,13 @@ public class GetUsernameCacheResponsePacket implements IPacketBase<GetUsernameCa
     }
 
     @Override
-    public void encode(GetUsernameCacheResponsePacket packet, FriendlyByteBuf buf) {
+    public void encode(GetUsernameCacheResponsePacket packet, RegistryFriendlyByteBuf buf) {
         buf.writeLong(packet.requestId);
         buf.writeMap(packet.usernamecache, (b, k) -> b.writeUUID(k), (b, v) -> b.writeUtf(v));
     }
 
     @Override
-    public GetUsernameCacheResponsePacket decode(FriendlyByteBuf buf) {
+    public GetUsernameCacheResponsePacket decode(RegistryFriendlyByteBuf buf) {
         long requestId = buf.readLong();
         Map<UUID, String> usernamecache = buf.readMap(b -> b.readUUID(), b -> b.readUtf());
         return new GetUsernameCacheResponsePacket(requestId, usernamecache);

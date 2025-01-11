@@ -23,7 +23,7 @@ public class FavoritesFilter extends AbstractFilter<SoundFile> {
     
     @Override
     public ResourceLocation getFilterId() {
-        return new ResourceLocation(BlockBeats.MOD_ID, "favorites_filter");
+        return ResourceLocation.fromNamespaceAndPath(BlockBeats.MOD_ID, "favorites_filter");
     }
 
     @Override

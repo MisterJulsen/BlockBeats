@@ -16,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -46,7 +47,16 @@ public class SoundPlayerBlock extends BaseEntityBlock {
     }
 
     @Override
-    public InteractionResult use(BlockState blockState, Level level, BlockPos blockPos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        return onUse(state, level, pos, player);
+    }
+
+    @Override
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        return onUse(state, level, pos, player) == InteractionResult.SUCCESS ? ItemInteractionResult.SUCCESS : super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+    }
+
+    private InteractionResult onUse(BlockState blockState, Level level, BlockPos blockPos, Player player) {
         if (level.getBlockEntity(blockPos) instanceof SoundPlayerBlockEntity be) {            
             if (level.isClientSide && !player.isShiftKeyDown()) {
                 if (be.isAccessible(player)) {
@@ -61,7 +71,6 @@ public class SoundPlayerBlock extends BaseEntityBlock {
         return InteractionResult.SUCCESS;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void onRemove(BlockState blockState, Level level, BlockPos blockPos, BlockState blockState2, boolean bl) {
         if (level.getBlockEntity(blockPos) instanceof SoundPlayerBlockEntity be) {            

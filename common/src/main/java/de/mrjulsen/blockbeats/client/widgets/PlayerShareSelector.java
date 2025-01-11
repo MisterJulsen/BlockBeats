@@ -25,6 +25,7 @@ import de.mrjulsen.mcdragonlib.client.gui.widgets.DLScrollableWidgetContainer;
 import de.mrjulsen.mcdragonlib.client.util.Graphics;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
 import de.mrjulsen.mcdragonlib.core.EAlignment;
+import de.mrjulsen.mcdragonlib.net.DLNetworkManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -62,7 +63,7 @@ public class PlayerShareSelector extends DLScrollableWidgetContainer {
         this.filter = filter;
         clearWidgets();
 
-        BlockBeats.net().sendToServer(GetUsernameCachePacket.create((usernamecache) -> {            
+        DLNetworkManager.sendToServer(GetUsernameCachePacket.create((usernamecache) -> {            
             ClientPacketListener clientPacketListener = Minecraft.getInstance().player.connection;
             Map<UUID, PlayerInfo> infos = clientPacketListener.getOnlinePlayers().stream().collect(Collectors.toMap(x -> x.getProfile().getId(), x -> x));
             Set<UUID> shareEntries = SharingUtils.deserialize(file).keySet();

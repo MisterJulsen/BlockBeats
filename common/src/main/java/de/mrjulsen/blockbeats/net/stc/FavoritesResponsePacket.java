@@ -3,11 +3,11 @@ package de.mrjulsen.blockbeats.net.stc;
 import java.util.function.Supplier;
 
 import de.mrjulsen.blockbeats.net.callbacks.clinet.ManageFavoritesCallback;
-import de.mrjulsen.mcdragonlib.net.IPacketBase;
+import de.mrjulsen.mcdragonlib.net.BaseNetworkPacket;
 import dev.architectury.networking.NetworkManager.PacketContext;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
-public class FavoritesResponsePacket implements IPacketBase<FavoritesResponsePacket> {
+public class FavoritesResponsePacket extends BaseNetworkPacket<FavoritesResponsePacket> {
 
     private long requestId;
 
@@ -18,12 +18,12 @@ public class FavoritesResponsePacket implements IPacketBase<FavoritesResponsePac
     }
 
     @Override
-    public void encode(FavoritesResponsePacket packet, FriendlyByteBuf buf) {
+    public void encode(FavoritesResponsePacket packet, RegistryFriendlyByteBuf buf) {
         buf.writeLong(packet.requestId);
     }
 
     @Override
-    public FavoritesResponsePacket decode(FriendlyByteBuf buf) {
+    public FavoritesResponsePacket decode(RegistryFriendlyByteBuf buf) {
         return new FavoritesResponsePacket(buf.readLong());
     }
 

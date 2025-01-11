@@ -7,11 +7,11 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import de.mrjulsen.blockbeats.net.callbacks.clinet.GetFavoritesCallback;
-import de.mrjulsen.mcdragonlib.net.IPacketBase;
+import de.mrjulsen.mcdragonlib.net.BaseNetworkPacket;
 import dev.architectury.networking.NetworkManager.PacketContext;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
-public class GetAdditionalFileDataResponsePacket implements IPacketBase<GetAdditionalFileDataResponsePacket> {
+public class GetAdditionalFileDataResponsePacket extends BaseNetworkPacket<GetAdditionalFileDataResponsePacket> {
 
     private long requestId;
     private Set<String> paths;
@@ -26,7 +26,7 @@ public class GetAdditionalFileDataResponsePacket implements IPacketBase<GetAddit
     }
 
     @Override
-    public void encode(GetAdditionalFileDataResponsePacket packet, FriendlyByteBuf buf) {
+    public void encode(GetAdditionalFileDataResponsePacket packet, RegistryFriendlyByteBuf buf) {
         buf.writeLong(packet.requestId);
         buf.writeInt(packet.paths.size());
         for (String str : packet.paths) {
@@ -36,7 +36,7 @@ public class GetAdditionalFileDataResponsePacket implements IPacketBase<GetAddit
     }
 
     @Override
-    public GetAdditionalFileDataResponsePacket decode(FriendlyByteBuf buf) {
+    public GetAdditionalFileDataResponsePacket decode(RegistryFriendlyByteBuf buf) {
         long requestId = buf.readLong();
         int count = buf.readInt();
         Set<String> paths = new HashSet<>(count);

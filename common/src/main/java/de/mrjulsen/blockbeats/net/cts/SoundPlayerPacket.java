@@ -6,13 +6,13 @@ import de.mrjulsen.blockbeats.block.entity.SoundPlayerBlockEntity;
 import de.mrjulsen.blockbeats.core.data.ERedstoneMode;
 import de.mrjulsen.blockbeats.core.data.Playlist;
 import de.mrjulsen.blockbeats.core.data.playback.IPlaybackAreaBuilder;
-import de.mrjulsen.mcdragonlib.net.IPacketBase;
+import de.mrjulsen.mcdragonlib.net.BaseNetworkPacket;
 import dev.architectury.networking.NetworkManager.PacketContext;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.level.Level;
 
-public class SoundPlayerPacket implements IPacketBase<SoundPlayerPacket> {
+public class SoundPlayerPacket extends BaseNetworkPacket<SoundPlayerPacket> {
 
     private BlockPos pos;
     private Playlist playlist;
@@ -41,7 +41,7 @@ public class SoundPlayerPacket implements IPacketBase<SoundPlayerPacket> {
     }
 
     @Override
-    public void encode(SoundPlayerPacket packet, FriendlyByteBuf buf) {
+    public void encode(SoundPlayerPacket packet, RegistryFriendlyByteBuf buf) {
         buf.writeBlockPos(packet.pos);
         buf.writeNbt(packet.playlist.serializeNbt());
         buf.writeInt(packet.redstone.getIndex());
@@ -55,7 +55,7 @@ public class SoundPlayerPacket implements IPacketBase<SoundPlayerPacket> {
     }
 
     @Override
-    public SoundPlayerPacket decode(FriendlyByteBuf buf) {
+    public SoundPlayerPacket decode(RegistryFriendlyByteBuf buf) {
         BlockPos pos = buf.readBlockPos();
         Playlist playlist = Playlist.empty();
         playlist.deserializeNbt(buf.readNbt());

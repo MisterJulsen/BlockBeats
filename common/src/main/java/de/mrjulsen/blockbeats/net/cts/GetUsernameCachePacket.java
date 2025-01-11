@@ -5,16 +5,16 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import de.mrjulsen.blockbeats.BlockBeats;
 import de.mrjulsen.blockbeats.core.data.Usercache;
 import de.mrjulsen.blockbeats.net.callbacks.clinet.GetUsernameCacheCallback;
 import de.mrjulsen.blockbeats.net.stc.GetUsernameCacheResponsePacket;
-import de.mrjulsen.mcdragonlib.net.IPacketBase;
+import de.mrjulsen.mcdragonlib.net.BaseNetworkPacket;
+import de.mrjulsen.mcdragonlib.net.DLNetworkManager;
 import dev.architectury.networking.NetworkManager.PacketContext;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 
-public class GetUsernameCachePacket implements IPacketBase<GetUsernameCachePacket> {
+public class GetUsernameCachePacket extends BaseNetworkPacket<GetUsernameCachePacket> {
 
     private long requestId;
 
@@ -29,19 +29,19 @@ public class GetUsernameCachePacket implements IPacketBase<GetUsernameCachePacke
     }
 
     @Override
-    public void encode(GetUsernameCachePacket packet, FriendlyByteBuf buf) {
+    public void encode(GetUsernameCachePacket packet, RegistryFriendlyByteBuf buf) {
         buf.writeLong(packet.requestId);
     }
 
     @Override
-    public GetUsernameCachePacket decode(FriendlyByteBuf buf) {
+    public GetUsernameCachePacket decode(RegistryFriendlyByteBuf buf) {
         return new GetUsernameCachePacket(buf.readLong());
     }
 
     @Override
     public void handle(GetUsernameCachePacket packet, Supplier<PacketContext> contextSupplier) {
         contextSupplier.get().queue(() -> {            
-            BlockBeats.net().sendToPlayer((ServerPlayer)contextSupplier.get().getPlayer(), new GetUsernameCacheResponsePacket(
+            DLNetworkManager.sendToPlayer((ServerPlayer)contextSupplier.get().getPlayer(), new GetUsernameCacheResponsePacket(
                 packet.requestId,
                 Usercache.getInstance(contextSupplier.get().getPlayer().getServer()).getNamesMapped()
             ));

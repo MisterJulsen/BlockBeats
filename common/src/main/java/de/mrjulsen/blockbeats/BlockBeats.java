@@ -25,8 +25,7 @@ import de.mrjulsen.blockbeats.registry.ModBlocks;
 import de.mrjulsen.blockbeats.registry.ModCreativeModeTab;
 import de.mrjulsen.blockbeats.registry.ModItems;
 import de.mrjulsen.dragnsounds.registry.FilterRegistry;
-import de.mrjulsen.mcdragonlib.net.NetworkManagerBase;
-import dev.architectury.networking.NetworkChannel;
+import de.mrjulsen.mcdragonlib.net.DLNetworkManager;
 import dev.architectury.platform.Platform;
 import net.fabricmc.api.EnvType;
 
@@ -48,8 +47,6 @@ public final class BlockBeats {
 
     public static final String SOUND_PLAYER_CATEGORY = "sound_player";
 
-    private static NetworkManagerBase networkManager;
-
     public static void init() {
         FilterRegistry.register(PlayerFileAccessFilter.class);
         FilterRegistry.register(CaseInsensitiveMetadataFilter.class);
@@ -66,21 +63,19 @@ public final class BlockBeats {
         ModBlocks.init();
         ModBlockEntities.init();
         ModItems.init();
-
-        networkManager = new NetworkManagerBase(MOD_ID, MOD_ID + "_network", List.of(
-            // STC
-            GetAdditionalFileDataResponsePacket.class,
-            FavoritesResponsePacket.class,
-            GetUsernameCacheResponsePacket.class,
+        
+        DLNetworkManager.registerPackets(MOD_ID, 
+        List.of(
             // CTS
             SoundPlayerPacket.class,
             GetAdditionalFileDataPacket.class,
             ManageFavoritesPacket.class,
             GetUsernameCachePacket.class
+        ), List.of(
+            // STC
+            GetAdditionalFileDataResponsePacket.class,
+            FavoritesResponsePacket.class,
+            GetUsernameCacheResponsePacket.class
         ));
-    }
-
-    public static final NetworkChannel net() {
-        return networkManager.CHANNEL;
     }
 }

@@ -40,3 +40,6 @@ type = "required"
 versionRange = "[${dragnsounds_version},)"
 ordering = "BEFORE"
 side = "BOTH"
+
+[[mixins]]
+config = "${modid}.mixins.json"

@@ -46,6 +46,7 @@ import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
 import de.mrjulsen.mcdragonlib.client.util.WidgetsCollection;
 import de.mrjulsen.mcdragonlib.core.EAlignment;
 import de.mrjulsen.mcdragonlib.data.Single.MutableSingle;
+import de.mrjulsen.mcdragonlib.net.DLNetworkManager;
 import de.mrjulsen.mcdragonlib.util.TextUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.SystemToast;
@@ -161,10 +162,10 @@ public class FileSelectionPopup extends PopupWidget {
 
             boolean isFav = container.getFirst() != null && container.getFirst().getFavoritePaths().contains(file.toString());
             tasks.add(new TaskBuilder(isFav ? ModGuiIcons.STAR_FILLED.getAsSprite(16, 16) : ModGuiIcons.STAR.getAsSprite(16, 16), isFav ? textRemFavorite : textFavorite, (widget) -> {
-                BlockBeats.net().sendToServer(GetAdditionalFileDataPacket.create((favs, usernamecache) -> {
+                DLNetworkManager.sendToServer(GetAdditionalFileDataPacket.create((favs, usernamecache) -> {
                     final String path = widget.getAttachedSoundFile().toString();
                     final boolean remove = favs.contains(path);
-                    BlockBeats.net().sendToServer(ManageFavoritesPacket.create(Set.of(path), remove, () -> {
+                    DLNetworkManager.sendToServer(ManageFavoritesPacket.create(Set.of(path), remove, () -> {
                         if (remove) {
                             Minecraft.getInstance().getToasts().addToast(new SystemToast(SystemToastId.PERIODIC_NOTIFICATION, textFavoritesRemoved, TextUtils.text(widget.getAttachedSoundFile().getDisplayName())));
                         } else {                                

@@ -46,6 +46,7 @@ import de.mrjulsen.mcdragonlib.client.util.GuiAreaDefinition;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
 import de.mrjulsen.mcdragonlib.client.util.WidgetsCollection;
 import de.mrjulsen.mcdragonlib.core.EAlignment;
+import de.mrjulsen.mcdragonlib.net.DLNetworkManager;
 import de.mrjulsen.mcdragonlib.util.TextUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.FormattedText;
@@ -321,7 +322,7 @@ public class PlaylistScreen extends DLPopupScreen {
     @Override
     public void onClose() {
         files.retainAll(container.getFiles().stream().map(x -> x.toString()).toList());
-        BlockBeats.net().sendToServer(new SoundPlayerPacket(
+        DLNetworkManager.sendToServer(new SoundPlayerPacket(
             blockEntity.getBlockPos(),
             new Playlist(files, loop, shuffle, 0),
             playbackArea,

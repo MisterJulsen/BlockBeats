@@ -67,7 +67,7 @@ public class EntityRidingPlaybackAreaBuilder implements IPlaybackAreaBuilder {
 
     @Override
     public void deserializeNbt(CompoundTag nbt) {
-        entityIds.addAll(nbt.getList(NBT_ENTITY, Tag.TAG_STRING).stream().map(x -> new ResourceLocation(x.getAsString())).toList());
+        entityIds.addAll(nbt.getList(NBT_ENTITY, Tag.TAG_STRING).stream().map(x -> ResourceLocation.parse(x.getAsString())).toList());
         radius = nbt.getDouble(NBT_RADIUS);
     }
 

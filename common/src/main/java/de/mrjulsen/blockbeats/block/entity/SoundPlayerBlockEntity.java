@@ -29,6 +29,7 @@ import de.mrjulsen.mcdragonlib.DragonLib;
 import de.mrjulsen.mcdragonlib.data.Cache;
 import de.mrjulsen.mcdragonlib.data.DataCache;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -101,8 +102,8 @@ public class SoundPlayerBlockEntity extends TickableBlockEntity<SoundPlayerBlock
     }
 
     @Override
-    protected void saveAdditional(CompoundTag nbt) {
-        super.saveAdditional(nbt);
+    protected void saveAdditional(CompoundTag nbt, Provider registries) {
+        super.saveAdditional(nbt, registries);
         nbt.put(NBT_PLAYLIST, playlist.serializeNbt());
         nbt.putInt(NBT_REDSTONE, getRedstone().getIndex());
         nbt.putBoolean(NBT_RUNNING, isRunning());
@@ -121,8 +122,8 @@ public class SoundPlayerBlockEntity extends TickableBlockEntity<SoundPlayerBlock
     }
 
     @Override
-    public void load(CompoundTag nbt) {
-        super.load(nbt);
+    protected void loadAdditional(CompoundTag nbt, Provider registries) {
+        super.loadAdditional(nbt, registries);
         this.playlist.deserializeNbt(nbt.getCompound(NBT_PLAYLIST));
         this.redstone = ERedstoneMode.getByIndex(nbt.getInt(NBT_REDSTONE));
         running = nbt.getBoolean(NBT_RUNNING);

@@ -7,9 +7,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
 
 public enum ESoundVisibility implements StringRepresentable, ITranslatableEnum {
-    PRIVATE(0, "private", new ResourceLocation("textures/item/music_disc_mall.png")),
-    SHARED(1, "shared", new ResourceLocation("textures/item/music_disc_13.png")),
-    PUBLIC(2, "public", new ResourceLocation("textures/item/music_disc_cat.png"));
+    PRIVATE(0, "private", ResourceLocation.parse("textures/item/music_disc_mall.png")),
+    SHARED(1, "shared", ResourceLocation.parse("textures/item/music_disc_13.png")),
+    PUBLIC(2, "public", ResourceLocation.parse("textures/item/music_disc_cat.png"));
 
     private int index;
     private String name;

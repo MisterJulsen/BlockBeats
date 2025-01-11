@@ -14,7 +14,7 @@ public class CaseInsensitiveMetadataFilter extends AbstractFilter<SoundFile> {
 
     @Override
     public ResourceLocation getFilterId() {
-        return new ResourceLocation(BlockBeats.MOD_ID, "caseinsensitive_metadata_filter");
+        return ResourceLocation.fromNamespaceAndPath(BlockBeats.MOD_ID, "caseinsensitive_metadata_filter");
     }
 
     @Override

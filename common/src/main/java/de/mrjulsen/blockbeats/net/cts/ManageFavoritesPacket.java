@@ -4,17 +4,17 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import de.mrjulsen.blockbeats.BlockBeats;
 import de.mrjulsen.blockbeats.core.data.FavoritesList;
 import de.mrjulsen.blockbeats.net.callbacks.clinet.ManageFavoritesCallback;
 import de.mrjulsen.blockbeats.net.stc.FavoritesResponsePacket;
-import de.mrjulsen.mcdragonlib.net.IPacketBase;
+import de.mrjulsen.mcdragonlib.net.BaseNetworkPacket;
+import de.mrjulsen.mcdragonlib.net.DLNetworkManager;
 import dev.architectury.networking.NetworkManager.PacketContext;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
-public class ManageFavoritesPacket implements IPacketBase<ManageFavoritesPacket> {
+public class ManageFavoritesPacket extends BaseNetworkPacket<ManageFavoritesPacket> {
 
     private long requestId;
     private Set<String> paths;
@@ -33,7 +33,7 @@ public class ManageFavoritesPacket implements IPacketBase<ManageFavoritesPacket>
     }
 
     @Override
-    public void encode(ManageFavoritesPacket packet, FriendlyByteBuf buf) {
+    public void encode(ManageFavoritesPacket packet, RegistryFriendlyByteBuf buf) {
         buf.writeLong(packet.requestId);
         buf.writeBoolean(packet.remove);
         buf.writeInt(packet.paths.size());
@@ -43,7 +43,7 @@ public class ManageFavoritesPacket implements IPacketBase<ManageFavoritesPacket>
     }
 
     @Override
-    public ManageFavoritesPacket decode(FriendlyByteBuf buf) {
+    public ManageFavoritesPacket decode(RegistryFriendlyByteBuf buf) {
         long requestId = buf.readLong();
         boolean remove = buf.readBoolean();
         int count = buf.readInt();
@@ -59,7 +59,7 @@ public class ManageFavoritesPacket implements IPacketBase<ManageFavoritesPacket>
         contextSupplier.get().queue(() -> {
             perform(packet, contextSupplier.get().getPlayer());
         });
-        BlockBeats.net().sendToPlayer((ServerPlayer)contextSupplier.get().getPlayer(), new FavoritesResponsePacket(packet.requestId));
+        DLNetworkManager.sendToPlayer((ServerPlayer)contextSupplier.get().getPlayer(), new FavoritesResponsePacket(packet.requestId));
     }
 
     private static final synchronized void perform(ManageFavoritesPacket packet, Player player) {

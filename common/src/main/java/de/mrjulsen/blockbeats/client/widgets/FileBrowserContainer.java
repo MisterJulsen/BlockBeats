@@ -35,6 +35,7 @@ import de.mrjulsen.mcdragonlib.client.render.Sprite;
 import de.mrjulsen.mcdragonlib.client.util.Graphics;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
 import de.mrjulsen.mcdragonlib.core.EAlignment;
+import de.mrjulsen.mcdragonlib.net.DLNetworkManager;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.MutableComponent;
 
@@ -89,7 +90,7 @@ public class FileBrowserContainer extends DLScrollableWidgetContainer {
             filters.add(searchTerm);
         }
         filters.add(new FileInfoFilter(FileInfoFilter.KEY_LOCATION, ClientWrapper.location(BlockBeats.SOUND_PLAYER_CATEGORY).toString(), ECompareOperation.STARTS_WITH));
-        BlockBeats.net().sendToServer(GetAdditionalFileDataPacket.create((favs, usernamecache) -> {
+        DLNetworkManager.sendToServer(GetAdditionalFileDataPacket.create((favs, usernamecache) -> {
             this.localUsernamecache = usernamecache;
             this.favPaths = favs;
             ClientApi.getAllSoundFiles(filters, (files) -> {

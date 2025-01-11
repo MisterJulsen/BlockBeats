@@ -18,7 +18,7 @@ public class FalseFilter extends AbstractFilter<SoundFile> {
 
     @Override
     public ResourceLocation getFilterId() {
-        return new ResourceLocation(BlockBeats.MOD_ID, "false_filter");
+        return ResourceLocation.fromNamespaceAndPath(BlockBeats.MOD_ID, "false_filter");
     }
 
     @Override
