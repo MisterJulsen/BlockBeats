@@ -33,7 +33,7 @@
         ]
     },
     "result": {
-        "item": "blockbeats:sound_player",
+        "id": "blockbeats:sound_player",
         "count": 1
     }
 }
