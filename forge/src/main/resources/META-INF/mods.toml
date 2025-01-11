@@ -35,7 +35,7 @@ ordering = "BEFORE"
 side = "BOTH"
 
 [[dependencies.${modid}]]
-modId = "dragonlib"
+modId = "dragnsounds"
 mandatory = true
 versionRange = "[${dragnsounds_version},)"
 ordering = "BEFORE"
