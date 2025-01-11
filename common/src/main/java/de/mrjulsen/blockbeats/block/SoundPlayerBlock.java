@@ -2,6 +2,8 @@ package de.mrjulsen.blockbeats.block;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.mojang.serialization.MapCodec;
+
 import de.mrjulsen.blockbeats.BlockBeats;
 import de.mrjulsen.blockbeats.block.entity.SoundPlayerBlockEntity;
 import de.mrjulsen.blockbeats.block.entity.TickableBlockEntity;
@@ -30,10 +32,17 @@ import net.minecraft.world.phys.BlockHitResult;
 
 public class SoundPlayerBlock extends BaseEntityBlock {
 
+    public static final MapCodec<SoundPlayerBlock> CODEC = simpleCodec(SoundPlayerBlock::new);
+
     private static final MutableComponent textInaccessible = TextUtils.translate("block." + BlockBeats.MOD_ID + ".sound_player.locked").withStyle(ChatFormatting.RED);
 
-    public SoundPlayerBlock() {
-        super(Properties.copy(Blocks.JUKEBOX));
+    public SoundPlayerBlock(Properties properties) {
+        super(Properties.ofFullCopy(Blocks.JUKEBOX));
+    }
+
+    @Override
+    public MapCodec<SoundPlayerBlock> codec() {
+        return CODEC;
     }
 
     @Override
@@ -108,6 +117,5 @@ public class SoundPlayerBlock extends BaseEntityBlock {
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pBlockEntityType) {
         return createTickerHelper(pBlockEntityType, ModBlockEntities.SOUND_PLAYER_BLOCK_ENTITY.get(), TickableBlockEntity::globalTick);
-    }
-    
+    }    
 }

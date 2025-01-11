@@ -31,6 +31,7 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:$rootProject.fabric_api_version"
 
     modCompileOnly("com.electronwill.night-config:toml:3.6.0")
+	modRuntimeOnly("eu.pb4:placeholder-api:${project.text_placeholder_api_version}")
     modCompileOnly("dev.architectury:architectury-fabric:${rootProject.architectury_api_version}")
     modImplementation("com.terraformersmc:modmenu:${rootProject.modmenu_version}")
     modImplementation("de.mrjulsen.mcdragonlib:dragonlib-fabric:${rootProject.minecraft_version}-${rootProject.dragonlib_version}")

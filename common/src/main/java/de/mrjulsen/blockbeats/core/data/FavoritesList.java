@@ -15,6 +15,7 @@ import de.mrjulsen.dragnsounds.core.filesystem.SoundLocation;
 import de.mrjulsen.mcdragonlib.data.INBTSerializable;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
@@ -83,7 +84,7 @@ public class FavoritesList implements INBTSerializable {
         CompoundTag nbt = this.serializeNbt();
     
         try {
-            NbtIo.writeCompressed(nbt, new File(SoundLocation.getModDirectory(server.overworld()).toString() + "/" + BlockBeats.MOD_ID + "/" + INDEX_FILENAME));
+            NbtIo.writeCompressed(nbt, SoundLocation.getModDirectory(server.overworld()).resolve(BlockBeats.MOD_ID).resolve(INDEX_FILENAME));
             DragNSounds.LOGGER.info("Saved Favorites List.");
         } catch (IOException var3) {
             DragNSounds.LOGGER.error("Unable to save favorite file.", var3);
@@ -94,7 +95,7 @@ public class FavoritesList implements INBTSerializable {
         File indexFile = new File(SoundLocation.getModDirectory(server.overworld()).toString() + "/" + BlockBeats.MOD_ID + "/" + INDEX_FILENAME);
         FavoritesList file = new FavoritesList(server);
         if (indexFile.exists()) {
-            file.deserializeNbt(NbtIo.readCompressed(indexFile));
+            file.deserializeNbt(NbtIo.readCompressed(indexFile.toPath(), NbtAccounter.unlimitedHeap()));
         }
         return file;
     }

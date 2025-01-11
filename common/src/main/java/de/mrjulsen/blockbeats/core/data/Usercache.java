@@ -2,6 +2,7 @@ package de.mrjulsen.blockbeats.core.data;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -12,6 +13,7 @@ import de.mrjulsen.blockbeats.BlockBeats;
 import de.mrjulsen.dragnsounds.DragNSounds;
 import de.mrjulsen.mcdragonlib.data.INBTSerializable;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
@@ -80,7 +82,7 @@ public class Usercache implements INBTSerializable {
         CompoundTag nbt = this.serializeNbt();
     
         try {
-            NbtIo.writeCompressed(nbt, new File(server.getWorldPath(new LevelResource("data\\" + BlockBeats.MOD_ID + "_" + INDEX_FILENAME)).toString()));
+            NbtIo.writeCompressed(nbt, server.getWorldPath(new LevelResource(Paths.get("data", BlockBeats.MOD_ID + "_" + INDEX_FILENAME).toString())));
             DragNSounds.LOGGER.info("Saved Usercache List.");
         } catch (IOException var3) {
             DragNSounds.LOGGER.error("Unable to save usercache file.", var3);
@@ -91,7 +93,7 @@ public class Usercache implements INBTSerializable {
         File indexFile = new File(server.getWorldPath(new LevelResource("data\\" + BlockBeats.MOD_ID + "_" + INDEX_FILENAME)).toString());
         Usercache file = new Usercache(server);
         if (indexFile.exists()) {
-            file.deserializeNbt(NbtIo.readCompressed(indexFile));
+            file.deserializeNbt(NbtIo.readCompressed(indexFile.toPath(), NbtAccounter.unlimitedHeap()));
         }
         file.cache.entrySet().removeIf(x -> x.getValue().lastRefreshed() + MAX_VALID_TIME < System.currentTimeMillis());
         return file;

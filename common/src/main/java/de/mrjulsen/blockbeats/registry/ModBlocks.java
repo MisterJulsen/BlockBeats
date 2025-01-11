@@ -10,11 +10,12 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(BlockBeats.MOD_ID, Registries.BLOCK);
 
-    public static final RegistrySupplier<SoundPlayerBlock> SOUND_PLAYER = register("sound_player", SoundPlayerBlock::new);
+    public static final RegistrySupplier<SoundPlayerBlock> SOUND_PLAYER = register("sound_player", () -> new SoundPlayerBlock(Properties.of()));
 
 
 

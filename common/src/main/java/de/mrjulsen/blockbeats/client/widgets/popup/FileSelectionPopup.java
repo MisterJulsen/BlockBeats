@@ -49,7 +49,7 @@ import de.mrjulsen.mcdragonlib.data.Single.MutableSingle;
 import de.mrjulsen.mcdragonlib.util.TextUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.SystemToast;
-import net.minecraft.client.gui.components.toasts.SystemToast.SystemToastIds;
+import net.minecraft.client.gui.components.toasts.SystemToast.SystemToastId;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
@@ -166,9 +166,9 @@ public class FileSelectionPopup extends PopupWidget {
                     final boolean remove = favs.contains(path);
                     BlockBeats.net().sendToServer(ManageFavoritesPacket.create(Set.of(path), remove, () -> {
                         if (remove) {
-                            Minecraft.getInstance().getToasts().addToast(new SystemToast(SystemToastIds.PERIODIC_NOTIFICATION, textFavoritesRemoved, TextUtils.text(widget.getAttachedSoundFile().getDisplayName())));
+                            Minecraft.getInstance().getToasts().addToast(new SystemToast(SystemToastId.PERIODIC_NOTIFICATION, textFavoritesRemoved, TextUtils.text(widget.getAttachedSoundFile().getDisplayName())));
                         } else {                                
-                        Minecraft.getInstance().getToasts().addToast(new SystemToast(SystemToastIds.PERIODIC_NOTIFICATION, textFavoritesAdded, TextUtils.text(widget.getAttachedSoundFile().getDisplayName())));
+                        Minecraft.getInstance().getToasts().addToast(new SystemToast(SystemToastId.PERIODIC_NOTIFICATION, textFavoritesAdded, TextUtils.text(widget.getAttachedSoundFile().getDisplayName())));
                         }
                         container.getFirst().refresh();
                     }));

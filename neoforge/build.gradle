@@ -2,15 +2,26 @@ plugins {
     id 'com.github.johnrengelman.shadow'
 }
 
-loom {
-    forge {
-        mixinConfig "blockbeats.mixins.json"
-    }
-}
-
 architectury {
     platformSetupLoomIde()
-    forge()
+    neoForge()
+}
+
+loom {
+    accessWidenerPath = project(":common").loom.accessWidenerPath
+}
+
+tasks {
+    processResources {
+        from(project(":common").file("src/main/resources/blockbeats.accesswidener")) {
+            into("/assets/")
+        }
+    }
+
+    remapJar {
+        dependsOn(processResources)
+        atAccessWideners.add("blockbeats.accesswidener")
+    }
 }
 
 configurations {
@@ -20,7 +31,7 @@ configurations {
     }
     compileClasspath.extendsFrom common
     runtimeClasspath.extendsFrom common
-    developmentForge.extendsFrom common
+    developmentNeoForge.extendsFrom common
 
     // Files in this configuration will be bundled into your mod using the Shadow plugin.
     // Don't use the `shadow` configuration from the plugin itself as it's meant for excluding files.
@@ -30,12 +41,19 @@ configurations {
     }
 }
 
-dependencies {
-    forge "net.minecraftforge:forge:$rootProject.forge_version"
+repositories {
+    maven {
+        name = 'NeoForged'
+        url = 'https://maven.neoforged.net/releases'
+    }
+}
 
-    modCompileOnly("dev.architectury:architectury-forge:${rootProject.architectury_api_version}")
-    modImplementation("de.mrjulsen.mcdragonlib:dragonlib-forge:${rootProject.minecraft_version}-${rootProject.dragonlib_version}")
-    modImplementation("de.mrjulsen.dragnsounds:dragnsounds-forge:${rootProject.minecraft_version}-${rootProject.dragnsounds_version}")
+dependencies {
+    neoForge "net.neoforged:neoforge:$rootProject.neoforge_version"
+
+    modCompileOnly("dev.architectury:architectury-neoforge:${rootProject.architectury_api_version}")
+    modImplementation("de.mrjulsen.mcdragonlib:dragonlib-neoforge:${rootProject.minecraft_version}-${rootProject.dragonlib_version}")
+    modImplementation("de.mrjulsen.dragnsounds:dragnsounds-neoforge:${rootProject.minecraft_version}-${rootProject.dragnsounds_version}")
     
     modImplementation(forgeRuntimeLibrary("ws.schild:jave-core:${rootProject.jave_version}"))
     modImplementation(forgeRuntimeLibrary("ws.schild:jave-nativebin-linux32:${rootProject.jave_version}"))
@@ -48,7 +66,7 @@ dependencies {
     modImplementation(forgeRuntimeLibrary("ws.schild:jave-nativebin-osx64:${rootProject.jave_version}"))
 
     common(project(path: ':common', configuration: 'namedElements')) { transitive false }
-    shadowBundle project(path: ':common', configuration: 'transformProductionForge')
+    shadowBundle project(path: ':common', configuration: 'transformProductionNeoForge')
 }
 
 processResources {
@@ -60,6 +78,8 @@ processResources {
 }
 
 shadowJar {
+    exclude "fabric.mod.json"
+    exclude "architectury.common.json"
     configurations = [project.configurations.shadowBundle]
     archiveClassifier = 'dev-shadow'
 }

@@ -333,10 +333,10 @@ public class MapAreaSelectionWidget extends DLWidgetContainer {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
         int coordX = mouseXMapCoord(getX() + getWidth() / 2);
         int coordY = mouseYMapCoord(getY() + getHeight() / 2);
-        this.map.setScale(MathUtils.clamp((int)(map.getScale() + delta), 1, 8));
+        this.map.setScale(MathUtils.clamp((int)(map.getScale() + deltaY), 1, 8));
         centerViewToPoint(coordX, coordY);
         return true;
     }

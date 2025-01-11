@@ -73,7 +73,7 @@ public class PlayerShareSelector extends DLScrollableWidgetContainer {
             for (UUID id : shareEntries) {
                 final UUID currentId = id;
                 final String name = infos.containsKey(currentId) ? infos.get(currentId).getProfile().getName() : usernamecache.getOrDefault(currentId, currentId.toString());
-                final ResourceLocation skinLocation = infos.containsKey(currentId) ? infos.get(currentId).getSkinLocation() : null;
+                final ResourceLocation skinLocation = infos.containsKey(currentId) ? infos.get(currentId).getSkin().texture() : null;
 
                 if ((name != null && !name.toLowerCase(Locale.ROOT).contains(filter.toLowerCase(Locale.ROOT))) && !currentId.toString().toLowerCase(Locale.ROOT).contains(filter.toLowerCase(Locale.ROOT))) {
                     continue;
@@ -111,7 +111,7 @@ public class PlayerShareSelector extends DLScrollableWidgetContainer {
                 }
 
                 final UUID currentId = info.getKey();
-                addRenderableWidget(new PlayerWidget(parent, this, getX(), dY, getWidth(), info.getValue().getProfile().getId(), info.getValue().getProfile().getName(), info.getValue().getSkinLocation(),
+                addRenderableWidget(new PlayerWidget(parent, this, getX(), dY, getWidth(), info.getValue().getProfile().getId(), info.getValue().getProfile().getName(), info.getValue().getSkin().texture(),
                 (b) -> {
 
                 }, List.of(
