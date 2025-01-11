@@ -167,7 +167,7 @@ public class SoundPlayerBlockEntity extends TickableBlockEntity<SoundPlayerBlock
     }
 
     public int playbackProgressTicksNow() {
-        int millisPerTick = (int)(TimeUnit.SECONDS.toMillis(1) / DragonLib.TPS);
+        int millisPerTick = (int)(TimeUnit.SECONDS.toMillis(1) / DragonLib.mcTps());
         long progressMillis = System.currentTimeMillis() - startTimeMillis;
         int progressTicks = (int)(progressMillis / millisPerTick / getPitch());
         return progressTicks;

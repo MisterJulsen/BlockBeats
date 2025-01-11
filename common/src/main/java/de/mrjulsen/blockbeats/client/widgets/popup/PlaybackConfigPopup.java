@@ -62,16 +62,18 @@ public class PlaybackConfigPopup extends PopupWidget {
         doneButton.setRenderStyle(AreaStyle.DRAGONLIB);
         doneButton.setBackColor(DragonLib.PRIMARY_BUTTON_COLOR);
 
-        volumeSlider = addRenderableWidget(new DLSlider(guiLeft + 6, guiTop + 20, WIN_WIDTH - 12, 20, TextUtils.empty(), TextUtils.empty(), CustomSoundInstance.VOLUME_MIN * 100, CustomSoundInstance.VOLUME_MAX * 100, volume * 100, 1, 1, true,
-        (slider) -> {
+        volumeSlider = addRenderableWidget(new DLSlider(guiLeft + 6, guiTop + 20, WIN_WIDTH - 12, 20, TextUtils.empty(), TextUtils.empty(), CustomSoundInstance.VOLUME_MIN * 100, CustomSoundInstance.VOLUME_MAX * 100, volume * 100, 1, 1, true));
+        volumeSlider.setOnUpdateMessage((slider) -> {
             slider.setMessage(slider.getValue() <= 0 ? TextUtils.text(String.format("%s: %s", textVolume.getString(), CommonComponents.OPTION_OFF.getString())) : TextUtils.text(String.format("%s: %s%%", textVolume.getString(), slider.getValueInt())));
-        }));
+        });
         volumeSlider.setRenderStyle(AreaStyle.DRAGONLIB);
-        pitchSlider = addRenderableWidget(new DLSlider(guiLeft + 6, guiTop + 20 + 25, WIN_WIDTH - 12, 20, TextUtils.empty(), TextUtils.empty(), CustomSoundInstance.PITCH_MIN, CustomSoundInstance.PITCH_MAX, pitch, 0.05f, 1, true,
-        (slider) -> {            
+        volumeSlider.setValue(volumeSlider.getValue());
+        pitchSlider = addRenderableWidget(new DLSlider(guiLeft + 6, guiTop + 20 + 25, WIN_WIDTH - 12, 20, TextUtils.empty(), TextUtils.empty(), CustomSoundInstance.PITCH_MIN, CustomSoundInstance.PITCH_MAX, pitch, 0.05f, 1, true));
+        pitchSlider.setOnUpdateMessage((slider) -> {
             slider.setMessage(TextUtils.text(String.format("%s: %.2f", textPitch.getString(), slider.getValue())));
-        }));
+        });
         pitchSlider.setRenderStyle(AreaStyle.DRAGONLIB);
+        pitchSlider.setValue(pitchSlider.getValue());
         attenuationDistanceSelector = addRenderableWidget(new DLNumberSelector(guiLeft + WIN_WIDTH - 6 - 50, guiTop + 20 + 50, 50, 20, attenuationDistance, true, (box, value) -> {
 
         }));
@@ -80,9 +82,13 @@ public class PlaybackConfigPopup extends PopupWidget {
 
         bgmCheck = addRenderableWidget(new DLCheckBox(guiLeft + 6, guiTop + 20 + 75, WIN_WIDTH - 12, textBgm.getString(), bgm, (box) -> {}));
         bgmCheck.setRenderStyle(AreaStyle.DRAGONLIB);
+        bgmCheck.setFontColor(DragonLib.NATIVE_UI_FONT_COLOR);
+        bgmCheck.setTextShadow(false);
         tooltips.add(DLTooltip.of(descriptionBgm).assignedTo(bgmCheck).withMaxWidth(width / 4));
         labelCheck = addRenderableWidget(new DLCheckBox(guiLeft + 6, guiTop + 20 + 91, WIN_WIDTH - 12, textShowLabel.getString(), showLabel, (box) -> {}));
         labelCheck.setRenderStyle(AreaStyle.DRAGONLIB);
+        labelCheck.setFontColor(DragonLib.NATIVE_UI_FONT_COLOR);
+        labelCheck.setTextShadow(false);
         tooltips.add(DLTooltip.of(descriptionShowLabel).assignedTo(labelCheck).withMaxWidth(width / 4));
     }
 
