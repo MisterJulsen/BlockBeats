@@ -10,7 +10,7 @@
     "gui.blockbeats.playlist_screen.refresh": "Aktualisieren",
     "gui.blockbeats.playlist_screen.move_up": "Nach oben verschieben",
     "gui.blockbeats.playlist_screen.move_down": "Nach unten verschieben",
-    "gui.blockbeats.playlist_screen.favirote": "Favorisieren",
+    "gui.blockbeats.playlist_screen.favorite": "Favorisieren",
     "gui.blockbeats.playlist_screen.add": "Hinzufügen",
     "gui.blockbeats.playlist_screen.description.add": "Wähle Dateien für deine Playlist aus oder lade neue hoch.",
     "gui.blockbeats.playlist_screen.description.playback_area": "Einstellungen in welchem Bereich (relativ zum Block) Spieler Sounds hören können.",

@@ -30,7 +30,7 @@ import de.mrjulsen.dragnsounds.core.filesystem.SoundFile;
 import de.mrjulsen.mcdragonlib.DragonLib;
 import de.mrjulsen.mcdragonlib.client.gui.widgets.DLAbstractScrollBar;
 import de.mrjulsen.mcdragonlib.client.gui.widgets.DLContextMenu;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.ScrollableWidgetContainer;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.DLScrollableWidgetContainer;
 import de.mrjulsen.mcdragonlib.client.render.Sprite;
 import de.mrjulsen.mcdragonlib.client.util.Graphics;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
@@ -38,7 +38,7 @@ import de.mrjulsen.mcdragonlib.core.EAlignment;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.MutableComponent;
 
-public class FileBrowserContainer extends ScrollableWidgetContainer {
+public class FileBrowserContainer extends DLScrollableWidgetContainer {
 
     private final DLPopupScreen parent;
     private final Supplier<DLAbstractScrollBar<?>> scrollBar;
@@ -148,7 +148,7 @@ public class FileBrowserContainer extends ScrollableWidgetContainer {
             }, fileTasks.apply(files.get(i))));
         }
         if (scrollBar.get() != null) {
-            scrollBar.get().updateMaxScroll(maxRequiredHeight());
+            scrollBar.get().setMaxScroll(maxRequiredHeight());
             scrollBar.get().scrollTo(0);
         }
     }
@@ -196,7 +196,7 @@ public class FileBrowserContainer extends ScrollableWidgetContainer {
     
     @Override
     public boolean consumeScrolling(double mouseX, double mouseY) {
-        return isMouseOver(mouseX, mouseY);
+        return false;
     }
 
     public static record TaskBuilder(Sprite sprite, MutableComponent text, Consumer<SoundFileWidget> action, boolean addButton) {}
