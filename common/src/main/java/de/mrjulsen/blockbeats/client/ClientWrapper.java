@@ -26,12 +26,10 @@ public class ClientWrapper {
         DLScreen.setScreen(new PlaylistScreen(blockEntity));
     }
 
-    @SuppressWarnings("resource")
     public static SoundLocation myLocation(String category) {
         return new SoundLocation(Minecraft.getInstance().level, BlockBeats.MOD_ID, String.format("%s/%s", category, Minecraft.getInstance().player.getUUID()));
     }
 
-    @SuppressWarnings("resource")
     public static SoundLocation location(String category) {
         return new SoundLocation(Minecraft.getInstance().level, BlockBeats.MOD_ID, category);
     }
@@ -49,11 +47,10 @@ public class ClientWrapper {
             item.y = box.getY() + 1 + count * box.getItemHeight();
             count++;
         }
-        box.getScrollBar().updateMaxScroll(count * box.getItemHeight() + 2);
+        box.getScrollBar().setMaxScroll(count * box.getItemHeight() + 2);
         return count;
     }
     
-    @SuppressWarnings("resource")
     public static MutableComponent textCutOff(MutableComponent text, int maxWidth) {
         MutableComponent dots = TextUtils.text("...");
         Font font = Minecraft.getInstance().font;
@@ -65,25 +62,23 @@ public class ClientWrapper {
         return text;
     }
 
-    @SuppressWarnings("resource")
     public static <T extends Enum<T> & ITranslatableEnum> List<FormattedText> getEnumTooltipData(String modid, Class<T> enumClass, T selected, int maxWidth) {
         List<FormattedText> c = new ArrayList<>();
         T enumValue = enumClass.getEnumConstants()[0];
-        c.addAll(((FontAccessor) Minecraft.getInstance().font).getSplitter()
+        c.addAll(((FontAccessor) Minecraft.getInstance().font).dragonlib$getSplitter()
                 .splitLines(TextUtils.translate(enumValue.getEnumDescriptionTranslationKey(modid)), maxWidth, Style.EMPTY));
         c.add(TextUtils.text(" "));
         for (T val : enumClass.getEnumConstants()) {
             String seq1 = String.format("> %s", TextUtils.translate(val.getValueTranslationKey(modid)).getString());
             String seq2 = TextUtils.translate(val.getValueInfoTranslationKey(modid)).getString();
-            c.addAll(((FontAccessor)Minecraft.getInstance().font).getSplitter().splitLines(seq1, maxWidth, Style.EMPTY.withBold(true).withColor(val == selected ? ChatFormatting.GOLD : ChatFormatting.WHITE)));
-            c.addAll(((FontAccessor)Minecraft.getInstance().font).getSplitter().splitLines(seq2, maxWidth, Style.EMPTY.withColor(val == selected ? ChatFormatting.YELLOW : ChatFormatting.GRAY)));
+            c.addAll(((FontAccessor)Minecraft.getInstance().font).dragonlib$getSplitter().splitLines(seq1, maxWidth, Style.EMPTY.withBold(true).withColor(val == selected ? ChatFormatting.GOLD : ChatFormatting.WHITE)));
+            c.addAll(((FontAccessor)Minecraft.getInstance().font).dragonlib$getSplitter().splitLines(seq2, maxWidth, Style.EMPTY.withColor(val == selected ? ChatFormatting.YELLOW : ChatFormatting.GRAY)));
         }
         
         return c;
     }
 
-    @SuppressWarnings("resource")
     public static List<FormattedText> split(Component text, int maxWidth, Style style) {
-        return ((FontAccessor)Minecraft.getInstance().font).getSplitter().splitLines(text, maxWidth, style);
+        return ((FontAccessor)Minecraft.getInstance().font).dragonlib$getSplitter().splitLines(text, maxWidth, style);
     }
 }

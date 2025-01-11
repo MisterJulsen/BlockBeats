@@ -21,7 +21,7 @@ import de.mrjulsen.dragnsounds.api.ClientApi;
 import de.mrjulsen.dragnsounds.core.filesystem.SoundFile;
 import de.mrjulsen.mcdragonlib.DragonLib;
 import de.mrjulsen.mcdragonlib.client.gui.widgets.DLAbstractScrollBar;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.ScrollableWidgetContainer;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.DLScrollableWidgetContainer;
 import de.mrjulsen.mcdragonlib.client.util.Graphics;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
 import de.mrjulsen.mcdragonlib.core.EAlignment;
@@ -33,7 +33,7 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 
-public class PlayerShareSelector extends ScrollableWidgetContainer {
+public class PlayerShareSelector extends DLScrollableWidgetContainer {
 
     private final MutableComponent textSharedWith = Utils.trans("share", "shared_with");
     private final MutableComponent textOnlinePlayers = Utils.trans("share", "online_players");
@@ -58,7 +58,6 @@ public class PlayerShareSelector extends ScrollableWidgetContainer {
         refresh("");
     }
 
-    @SuppressWarnings("resource")
     public void refresh(String filter) {
         this.filter = filter;
         clearWidgets();

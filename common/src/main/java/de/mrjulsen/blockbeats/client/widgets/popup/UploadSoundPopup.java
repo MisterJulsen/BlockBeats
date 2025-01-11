@@ -133,6 +133,7 @@ public class UploadSoundPopup extends PopupWidget {
             advancedBtn.setRenderStyle(AreaStyle.FLAT);
             advancedBtn.setBackColor(0x00FFFFFF);
             advancedBtn.setFontColor(DragonLib.PRIMARY_BUTTON_COLOR);
+            advancedBtn.setTextShadow(false);
         } else {
             bitRateInput = addRenderableWidget(new DLNumberSelector(guiLeft + WIN_WIDTH - 10 - 80, guiTop + dy, 80, 20, info.getAudio().getBitRate(), false,
             (b, value) -> {
@@ -155,6 +156,7 @@ public class UploadSoundPopup extends PopupWidget {
                 b.setMessage(TextUtils.text(String.format("%s: %s", textQuality.getString(), b.getValueInt())));
             }));
             qualityInput.setRenderStyle(AreaStyle.DRAGONLIB);
+            qualityInput.setValue(qualityInput.getValue());
         }
 
 

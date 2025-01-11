@@ -3,7 +3,7 @@ package de.mrjulsen.blockbeats.client.widgets;
 import de.mrjulsen.blockbeats.util.Utils;
 import de.mrjulsen.dragnsounds.core.filesystem.SoundFile;
 import de.mrjulsen.mcdragonlib.DragonLib;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.ScrollableWidgetContainer;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.DLScrollableWidgetContainer;
 import de.mrjulsen.mcdragonlib.client.util.Graphics;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
 import de.mrjulsen.mcdragonlib.core.EAlignment;
@@ -13,7 +13,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.MutableComponent;
 
-public class SoundFileInfoPanel extends ScrollableWidgetContainer {
+public class SoundFileInfoPanel extends DLScrollableWidgetContainer {
 
     private static final int LINE_HEIGHT = 12;
 

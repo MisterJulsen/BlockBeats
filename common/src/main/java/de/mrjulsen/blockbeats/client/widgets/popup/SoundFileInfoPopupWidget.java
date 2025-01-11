@@ -50,7 +50,7 @@ public class SoundFileInfoPopupWidget extends PopupWidget {
             .setAutoScrollerSize(true)
             .setScreenSize(container.getHeight())
             .setStepSize(8)
-            .updateMaxScroll(container.maxRequiredHeight() - container.getHeight())
+            .setMaxScroll(container.maxRequiredHeight() - container.getHeight())
             .withOnValueChanged((scrollbar) -> container.setYScrollOffset(scrollbar.getScrollValue()))
         ;
     }

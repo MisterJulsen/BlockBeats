@@ -68,7 +68,7 @@ public class SharePopup extends PopupWidget {
             .setAutoScrollerSize(true)
             .setScreenSize(container.getHeight())
             .setStepSize(15)
-            .updateMaxScroll(container.maxRequiredHeight())
+            .setMaxScroll(container.maxRequiredHeight())
             .withOnValueChanged((scrollbar) -> container.setYScrollOffset(scrollbar.getScrollValue()))
         ;
     }
