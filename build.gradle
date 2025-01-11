@@ -64,6 +64,7 @@ subprojects {
             "dragnsounds_version": rootProject.dragnsounds_version,
             "neoforge_loader_version": rootProject.neoforge_loader_version,
             "neoforge_dependency_version": rootProject.neoforge_dependency_version,
+            "fabric_loader_version": rootProject.fabric_loader_version,
             "java_version": rootProject.java_version
         ]
         filesMatching(['pack.mcmeta', 'fabric.mod.json', 'META-INF/mods.toml']) {
