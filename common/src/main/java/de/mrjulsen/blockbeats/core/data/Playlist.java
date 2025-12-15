@@ -94,21 +94,38 @@ public class Playlist implements INBTSerializable {
         }
 
         String val = remainingTracks.pollFirst();
-        consumedTracks.addLast(val);
+        if (val == null) {
+            return currentFile = val;
+        }
+        try {
+            consumedTracks.addLast(val);
+        } catch (Exception e) {            
+        }
         return currentFile = val;
     }
 
     public String previous() {
         if (consumedTracks.isEmpty()) {
             if (getLoop() == ELoopMode.LOOP) {
-                consumedTracks.addLast(remainingTracks.pollLast());
+                try {
+                    consumedTracks.addLast(remainingTracks.pollLast());
+                } catch (Exception e) {
+                    return null;
+                }
             } else {
                 return null;
             }
         }
-
+        
         String val = consumedTracks.pollLast();
-        remainingTracks.addFirst(val);
+        if (val == null) {
+            return currentFile = val;
+        }
+        try {
+            remainingTracks.addFirst(val);
+        } catch (Exception e) {            
+        }
+
         return currentFile = val;
     }
 
