@@ -1,7 +1,5 @@
 package de.mrjulsen.blockbeats;
 
-import java.util.List;
-
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -13,20 +11,12 @@ import de.mrjulsen.blockbeats.core.filters.PlayerFileAccessFilter;
 import de.mrjulsen.blockbeats.core.filters.SoundPlaylistFilter;
 import de.mrjulsen.blockbeats.events.ClientEvents;
 import de.mrjulsen.blockbeats.events.CommonEvents;
-import de.mrjulsen.blockbeats.net.cts.GetAdditionalFileDataPacket;
-import de.mrjulsen.blockbeats.net.cts.GetUsernameCachePacket;
-import de.mrjulsen.blockbeats.net.cts.ManageFavoritesPacket;
-import de.mrjulsen.blockbeats.net.cts.SoundPlayerPacket;
-import de.mrjulsen.blockbeats.net.stc.FavoritesResponsePacket;
-import de.mrjulsen.blockbeats.net.stc.GetAdditionalFileDataResponsePacket;
-import de.mrjulsen.blockbeats.net.stc.GetUsernameCacheResponsePacket;
 import de.mrjulsen.blockbeats.registry.ModBlockEntities;
 import de.mrjulsen.blockbeats.registry.ModBlocks;
 import de.mrjulsen.blockbeats.registry.ModCreativeModeTab;
 import de.mrjulsen.blockbeats.registry.ModItems;
+import de.mrjulsen.blockbeats.registry.ModNetworkManager;
 import de.mrjulsen.dragnsounds.registry.FilterRegistry;
-import de.mrjulsen.mcdragonlib.net.NetworkManagerBase;
-import dev.architectury.networking.NetworkChannel;
 import dev.architectury.platform.Platform;
 import net.fabricmc.api.EnvType;
 
@@ -48,8 +38,6 @@ public final class BlockBeats {
 
     public static final String SOUND_PLAYER_CATEGORY = "sound_player";
 
-    private static NetworkManagerBase networkManager;
-
     public static void init() {
         FilterRegistry.register(PlayerFileAccessFilter.class);
         FilterRegistry.register(CaseInsensitiveMetadataFilter.class);
@@ -66,21 +54,6 @@ public final class BlockBeats {
         ModBlocks.init();
         ModBlockEntities.init();
         ModItems.init();
-
-        networkManager = new NetworkManagerBase(MOD_ID, MOD_ID + "_network", List.of(
-            // STC
-            GetAdditionalFileDataResponsePacket.class,
-            FavoritesResponsePacket.class,
-            GetUsernameCacheResponsePacket.class,
-            // CTS
-            SoundPlayerPacket.class,
-            GetAdditionalFileDataPacket.class,
-            ManageFavoritesPacket.class,
-            GetUsernameCachePacket.class
-        ));
-    }
-
-    public static final NetworkChannel net() {
-        return networkManager.CHANNEL;
+        ModNetworkManager.init();
     }
 }

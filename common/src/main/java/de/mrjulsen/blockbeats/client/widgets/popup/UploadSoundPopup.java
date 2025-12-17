@@ -1,48 +1,45 @@
 package de.mrjulsen.blockbeats.client.widgets.popup;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import de.mrjulsen.blockbeats.BlockBeats;
 import de.mrjulsen.blockbeats.client.ClientWrapper;
-import de.mrjulsen.blockbeats.client.screen.DLPopupScreen;
 import de.mrjulsen.blockbeats.client.widgets.FileBrowserContainer;
 import de.mrjulsen.blockbeats.core.ESoundVisibility;
 import de.mrjulsen.blockbeats.util.Utils;
-import de.mrjulsen.dragnsounds.DragNSounds;
 import de.mrjulsen.dragnsounds.api.ClientApi;
 import de.mrjulsen.dragnsounds.core.ffmpeg.AudioSettings;
 import de.mrjulsen.dragnsounds.core.ffmpeg.EChannels;
 import de.mrjulsen.dragnsounds.core.ffmpeg.FFmpegUtils;
 import de.mrjulsen.dragnsounds.core.filesystem.SoundFile;
 import de.mrjulsen.mcdragonlib.DragonLib;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLButton;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLCycleButton;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLEditBox;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLNumberSelector;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLSlider;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLTooltip;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.IDragonLibWidget;
-import de.mrjulsen.mcdragonlib.client.render.DynamicGuiRenderer;
-import de.mrjulsen.mcdragonlib.client.render.DynamicGuiRenderer.AreaStyle;
-import de.mrjulsen.mcdragonlib.client.util.Graphics;
-import de.mrjulsen.mcdragonlib.client.util.GuiAreaDefinition;
+import de.mrjulsen.mcdragonlib.client.gui.events.DLGuiStandardEvents;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLWindowManager;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLButton;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLCycleButton;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLNumberPicker;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLRichTextEditBox;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLRichTextLabel;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLSlider;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLTooltip;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.render.FlatButtonRenderer;
+import de.mrjulsen.mcdragonlib.client.render.DefaultGuiTextures;
+import de.mrjulsen.mcdragonlib.client.util.DLGuiGraphics;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
-import de.mrjulsen.mcdragonlib.core.EAlignment;
-import de.mrjulsen.mcdragonlib.data.Single.MutableSingle;
+import de.mrjulsen.mcdragonlib.data.ETextAlignment;
 import de.mrjulsen.mcdragonlib.util.IOUtils;
-import de.mrjulsen.mcdragonlib.util.TextUtils;
+import de.mrjulsen.mcdragonlib.util.Holder.MutableHolder;
+import de.mrjulsen.mcdragonlib.util.math.Rectangle;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.MutableComponent;
 import ws.schild.jave.EncoderException;
 import ws.schild.jave.info.MultimediaInfo;
 
-public class UploadSoundPopup extends PopupWidget {
+public class UploadSoundPopup extends PopupWindow {
 
     private final MutableComponent title = Utils.trans("upload_file", "title");
     private final MutableComponent textUpload = Utils.trans("upload_file", "upload");
@@ -60,24 +57,22 @@ public class UploadSoundPopup extends PopupWidget {
     private static final int WIN_WIDTH = 200;
     private static int winHeight = 10;
 
-    private int guiLeft, guiTop;
     private final Path path;
 
     private boolean extendedOptions;
 
     private final Supplier<FileBrowserContainer> container;
-    private final Collection<DLTooltip> tooltips = new ArrayList<>();
 
     // Input
-    private DLEditBox nameBox;
+    private DLRichTextEditBox nameBox;
     private EChannels channels = EChannels.MONO;
     private ESoundVisibility visibility = ESoundVisibility.PRIVATE;
-    private DLNumberSelector bitRateInput = null;
-    private DLNumberSelector samplingRateInput = null;
+    private DLNumberPicker bitRateInput = null;
+    private DLNumberPicker samplingRateInput = null;
     private DLSlider qualityInput = null;
 
-    public UploadSoundPopup(DLPopupScreen parent, int layer, Path path, Supplier<FileBrowserContainer> container, int width, int height, Consumer<PopupWidget> close) {
-        super(parent, layer, width, height, close);
+    public UploadSoundPopup(DLWindowManager manager, Path path, Supplier<FileBrowserContainer> container) {
+        super(manager, WIN_WIDTH, 200);
         this.path = path;
         this.container = container;
 
@@ -85,9 +80,8 @@ public class UploadSoundPopup extends PopupWidget {
     }
 
     private void init(boolean extended) {
-        clearWidgets();
-        guiLeft = width / 2 - WIN_WIDTH / 2;
-        guiTop = height / 2 - winHeight / 2;
+        clearComponents();
+
         AtomicReference<DLButton> doneBtn = new AtomicReference<>();
 
         MultimediaInfo rawInfo = new MultimediaInfo();
@@ -99,105 +93,112 @@ public class UploadSoundPopup extends PopupWidget {
         final MultimediaInfo info = rawInfo;
         int dy = 25;
 
-        nameBox = addRenderableWidget(new DLEditBox(font, guiLeft + 10, guiTop + dy, WIN_WIDTH - 20, 18, hintEnterName));
-        nameBox.setMaxLength(BlockBeats.MAX_FILENAME_LENGTH);
-        nameBox.setValue(IOUtils.getFileNameWithoutExtension(path.toString()));
-        nameBox.withHint(hintEnterName);
-        nameBox.setResponder((text) -> {
+        nameBox = addComponent(new DLRichTextEditBox(10, dy, WIN_WIDTH - 20, 18));
+        nameBox.placeholderText.set(hintEnterName);
+        nameBox.maxCharacters.set(BlockBeats.MAX_FILENAME_LENGTH);
+        nameBox.text.get().set(IOUtils.getFileNameWithoutExtension(path.toString()));
+        nameBox.addEventListener(DLRichTextLabel.TextChangedEvent.class, (s, e) -> {
             if (doneBtn.get() != null) {
-                doneBtn.get().active = !text.isBlank();
+                doneBtn.get().enabled.set(!nameBox.text.get().getPlainText().isBlank());
             }
+            return false;
         });
+        
         dy += 20 + 10;
-        DLCycleButton<EChannels> channelsBtn = addRenderableWidget(GuiUtils.createCycleButton(DragNSounds.MOD_ID, EChannels.class, guiLeft + 10, guiTop + dy, WIN_WIDTH - 20, 20, textChannels, channels,
-        (btn, value) -> {
-            channels = value;
-        }));
-        channelsBtn.setRenderStyle(AreaStyle.DRAGONLIB);
-        tooltips.add(DLTooltip.of(DragNSounds.MOD_ID, EChannels.class).assignedTo(channelsBtn).withMaxWidth(width / 4));
+        DLCycleButton<EChannels> channelsBtn = addComponent(new DLCycleButton<>(10, dy, WIN_WIDTH - 20, 20));
+        channelsBtn.text.set(textChannels);
+        channelsBtn.items.addAll(EChannels.values());
+        channelsBtn.selectedItem.set(Optional.ofNullable(channels));
+        channelsBtn.tooltip.set(new DLTooltip(GuiUtils.getEnumTooltipData(EChannels.class, 200), 200));
+        channelsBtn.addEventListener(DLCycleButton.SelectedItemChanged.class, (a, e) -> {
+            channelsBtn.selectedItem.get().ifPresent(v -> channels = v);
+            return false;
+        });
 
         dy += 20 + 2;
-        DLCycleButton<ESoundVisibility> visibilityBtn = addRenderableWidget(GuiUtils.createCycleButton(BlockBeats.MOD_ID, ESoundVisibility.class, guiLeft + 10, guiTop + dy, WIN_WIDTH - 20, 20, textVisibility, visibility,
-        (btn, value) -> {
-            visibility = value;
-        }));
-        visibilityBtn.setRenderStyle(AreaStyle.DRAGONLIB);
-        tooltips.add(DLTooltip.of(BlockBeats.MOD_ID, ESoundVisibility.class).assignedTo(visibilityBtn).withMaxWidth(width / 4));
+        DLCycleButton<ESoundVisibility> visibilityBtn = addComponent(new DLCycleButton<>(10, dy, WIN_WIDTH - 20, 20));
+        visibilityBtn.text.set(textVisibility);
+        visibilityBtn.items.addAll(ESoundVisibility.values());
+        visibilityBtn.selectedItem.set(Optional.ofNullable(visibility));
+        visibilityBtn.tooltip.set(new DLTooltip(GuiUtils.getEnumTooltipData(ESoundVisibility.class, 200), 200));
+        visibilityBtn.addEventListener(DLCycleButton.SelectedItemChanged.class, (s, e) -> {
+            visibilityBtn.selectedItem.get().ifPresent(v -> visibility = v);
+            return false;
+        });
 
         dy += 20 + 2;
         if (!extended) {
-            DLButton advancedBtn = addRenderableWidget(GuiUtils.createButton(guiLeft + 10, guiTop + dy, WIN_WIDTH - 20, 20, textAdvancedSettings,
-            (btn) -> {
+            DLButton advancedBtn = addComponent(new DLButton(10, dy, WIN_WIDTH - 20, 20));
+            advancedBtn.text.set(textAdvancedSettings);
+            advancedBtn.componentRenderer.set(FlatButtonRenderer.INSTANCE);
+            advancedBtn.drawFontShadow.set(false);
+            advancedBtn.textColor.set(DragonLib.BUTTON_COLOR_PRIMARY);
+            advancedBtn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
                 init(true);
-            }));
-            advancedBtn.setRenderStyle(AreaStyle.FLAT);
-            advancedBtn.setBackColor(0x00FFFFFF);
-            advancedBtn.setFontColor(DragonLib.PRIMARY_BUTTON_COLOR);
-            advancedBtn.setTextShadow(false);
+                return false;
+            });
         } else {
-            bitRateInput = addRenderableWidget(new DLNumberSelector(guiLeft + WIN_WIDTH - 10 - 80, guiTop + dy, 80, 20, info.getAudio().getBitRate(), false,
-            (b, value) -> {
+            bitRateInput = addComponent(new DLNumberPicker(WIN_WIDTH - 10 - 80, dy, 80, 20));
+            bitRateInput.min.set(0D);
+            bitRateInput.max.set(384000D);
+            bitRateInput.value.set((double)(info.getAudio().getBitRate() < 0 ? DEFAULT_BIT_RATE : info.getAudio().getBitRate()));
 
-            }));
-            bitRateInput.setNumberBounds(0, 384000);
-            bitRateInput.setValue(info.getAudio().getBitRate() < 0 ? DEFAULT_BIT_RATE : info.getAudio().getBitRate(), true);
             dy += 20 + 2;
-            samplingRateInput = addRenderableWidget(new DLNumberSelector(guiLeft + WIN_WIDTH - 10 - 80, guiTop + dy, 80, 20, info.getAudio().getSamplingRate(), false,
-            (b, value) -> {
+            samplingRateInput = addComponent(new DLNumberPicker(WIN_WIDTH - 10 - 80, dy, 80, 20));
+            samplingRateInput.min.set(0D);
+            samplingRateInput.max.set(48000D);
+            samplingRateInput.value.set((double)(info.getAudio().getSamplingRate() < 0 ? DEFAULT_SAMPLING_RATE : info.getAudio().getSamplingRate()));
 
-            }));
-            samplingRateInput.setNumberBounds(0, 48000);
-            samplingRateInput.setValue(info.getAudio().getSamplingRate() < 0 ? DEFAULT_SAMPLING_RATE : info.getAudio().getSamplingRate(), true);
             dy += 20 + 2;
-            qualityInput = addRenderableWidget(GuiUtils.createSlider(guiLeft + 10, guiTop + dy, WIN_WIDTH - 20, 20, textQuality, TextUtils.empty(), 0, 10, 1, 5, true,
-            (b, val) -> {
-
-            }, (b) -> {
-                b.setMessage(TextUtils.text(String.format("%s: %s", textQuality.getString(), b.getValueInt())));
-            }));
-            qualityInput.setRenderStyle(AreaStyle.DRAGONLIB);
-            qualityInput.setValue(qualityInput.getValue());
+            qualityInput = addComponent(new DLSlider(10, dy, WIN_WIDTH - 20, 20));
+            qualityInput.text.set(textQuality);
+            qualityInput.max.set(10D);
         }
 
 
         dy += 20 + 10;
-        addRenderableWidget(new DLButton(width / 2 + 2, guiTop + dy, 80, 20, CommonComponents.GUI_CANCEL, b -> close())).setRenderStyle(AreaStyle.DRAGONLIB);
+        DLButton cancelBtn = addComponent(new DLButton(width() / 2 + 2, dy, 80, 20));
+        cancelBtn.text.set(CommonComponents.GUI_CANCEL);
+        cancelBtn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+            getWindowManager().closeWindow(this);
+            return false;
+        });
         
-        doneBtn.set(addRenderableWidget(new DLButton(width / 2 - 2 - 80, guiTop + dy, 80, 20, textUpload, b -> {
-            MutableSingle<UploadProgressPopup> progressWindow = new MutableSingle<>(null);
+        DLButton doneButton = addComponent(new DLButton(width() / 2 - 2 - 80, dy, 80, 20));
+        doneButton.text.set(textUpload);
+        doneButton.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+            MutableHolder<UploadProgressPopup> progressWindow = new MutableHolder<>(null);
             long id = ClientApi.uploadSound(
                 path.toString(),
-                new SoundFile.Builder(ClientWrapper.myLocation("sound_player"), nameBox.getValue(), Map.of(BlockBeats.META_VISIBILITY, visibility.getName(), BlockBeats.META_SHARED, "")),
-                new AudioSettings(channels, bitRateInput == null ? info.getAudio().getBitRate() : (int)bitRateInput.getValue(), samplingRateInput == null ? info.getAudio().getSamplingRate() : (int)samplingRateInput.getValue(), (byte)(qualityInput == null ? 5 : qualityInput.getValueInt())),
+                new SoundFile.Builder(ClientWrapper.myLocation("sound_player"), nameBox.text.get().getPlainText(), Map.of(BlockBeats.META_VISIBILITY, visibility.getName(), BlockBeats.META_SHARED, "")),
+                new AudioSettings(channels, bitRateInput == null ? info.getAudio().getBitRate() : bitRateInput.value.get().intValue(), samplingRateInput == null ? info.getAudio().getSamplingRate() : samplingRateInput.value.get().intValue(), (byte)(qualityInput == null ? 5 : qualityInput.value.get().intValue())),
                 (result) -> {
-                    if (progressWindow.getFirst() != null) {
-                        progressWindow.getFirst().close();
+                    if (progressWindow.get() != null) {
+                        progressWindow.get().getWindowManager().closeWindow(progressWindow.get());
                         if (container.get() != null) {
                             container.get().refresh();
                         }
                     }
                 }, (serverProgress, clientProgress) -> {
-                    if (progressWindow.getFirst() != null) {
-                        progressWindow.getFirst().progressBar.setValue(clientProgress.progress());
-                        progressWindow.getFirst().progressBar.setBufferValue(serverProgress.progress());
-                        progressWindow.getFirst().currentState = clientProgress.state();
+                    if (progressWindow.get() != null) {
+                        progressWindow.get().progressBar.value.set(clientProgress.progress());
+                        progressWindow.get().currentState = clientProgress.state();
                     }
                 }, (status) -> {
-                    if (progressWindow.getFirst() != null) {
-                        progressWindow.getFirst().close();
+                    if (progressWindow.get() != null) {
+                        progressWindow.get().getWindowManager().closeWindow(progressWindow.get());
                         if (container.get() != null) {
                             container.get().refresh();
                         }
                     }
                 }
             );
-            getParent().setPopup((w, h, l, cl) -> {
-                return store(new UploadProgressPopup(getParent(), l, id, w, h, cl), progressWindow);
-            });
-            close();
-        })));
-        doneBtn.get().setRenderStyle(AreaStyle.DRAGONLIB);
-        doneBtn.get().setBackColor(DragonLib.PRIMARY_BUTTON_COLOR);
+
+            getWindowManager().createModal(mgr -> store(new UploadProgressPopup(mgr, id), progressWindow));
+            getWindowManager().closeWindow(this);
+            return false;
+        });
+        doneBtn.set(doneButton);
 
         int oldWinHeight = winHeight;
         winHeight = dy + 30;
@@ -207,31 +208,19 @@ public class UploadSoundPopup extends PopupWidget {
         extendedOptions = extended;
     }
 
-    private <S> S store(S s, MutableSingle<S> in) {
-        in.setFirst(s);
+    private <S> S store(S s, MutableHolder<S> in) {
+        in.set(s);
         return s;
     }
-    
+
     @Override
-    public void renderMainPopupLayer(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderMainPopupLayer(graphics, mouseX, mouseY, partialTicks);
-        DynamicGuiRenderer.renderWindow(graphics, guiLeft, guiTop, WIN_WIDTH, winHeight);
-        GuiUtils.drawString(graphics, font, guiLeft + 6, guiTop + 6, title, DragonLib.NATIVE_UI_FONT_COLOR, EAlignment.LEFT, false);
+    public void renderMainLayer(DLGuiGraphics graphics, double mouseX, double mouseY, Rectangle renderBounds) {
+        DefaultGuiTextures.DRAGONLIB_UI.getSprite(DefaultGuiTextures.SPRITE_NAME_WINDOW_ROUNDED).render(graphics, 0, 0, width(), height());
+        GuiUtils.drawString(graphics, graphics.defaultFont(), 6, 6, title, DragonLib.VANILLA_UI_FONT_COLOR, ETextAlignment.LEFT, false);
 
         if (extendedOptions) {
-            GuiUtils.drawString(graphics, font, guiLeft + 10, bitRateInput.getY() + bitRateInput.getHeight() / 2 - font.lineHeight / 2, textBitRate, DragonLib.NATIVE_UI_FONT_COLOR, EAlignment.LEFT, false);
-            GuiUtils.drawString(graphics, font, guiLeft + 10, samplingRateInput.getY() + samplingRateInput.getHeight() / 2 - font.lineHeight / 2, textSamplingRate, DragonLib.NATIVE_UI_FONT_COLOR, EAlignment.LEFT, false);
+            GuiUtils.drawString(graphics, graphics.defaultFont(), 10, bitRateInput.y() + bitRateInput.height() / 2 - graphics.defaultFont().lineHeight / 2, textBitRate, DragonLib.VANILLA_UI_FONT_COLOR, ETextAlignment.LEFT, false);
+            GuiUtils.drawString(graphics, graphics.defaultFont(), 10, samplingRateInput.y() + samplingRateInput.height() / 2 - graphics.defaultFont().lineHeight / 2, textSamplingRate, DragonLib.VANILLA_UI_FONT_COLOR, ETextAlignment.LEFT, false);
         }
-    }
-
-    @Override
-    public void renderFrontLayer(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderFrontLayer(graphics, mouseX, mouseY, partialTicks);
-        tooltips.forEach(x -> {
-            if (x.getAssignedWidget() instanceof IDragonLibWidget wgt && !wgt.isMouseSelected()) {
-                return;
-            }
-            GuiUtils.renderTooltipAt(getParent(), GuiAreaDefinition.of(x.getAssignedWidget()), x.getLines(), x.getMaxWidth() > 0 ? x.getMaxWidth() : getParent().width(), graphics, x.getAssignedWidget().getX(), x.getAssignedWidget().getY() + x.getAssignedWidget().getHeight(), mouseX, mouseY, 0, 0);  
-        });
     }
 }

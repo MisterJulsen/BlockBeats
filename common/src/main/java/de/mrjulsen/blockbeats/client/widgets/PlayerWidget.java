@@ -1,25 +1,28 @@
 package de.mrjulsen.blockbeats.client.widgets;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
 import org.jetbrains.annotations.Nullable;
 
 import de.mrjulsen.blockbeats.client.ModGuiIcons;
-import de.mrjulsen.blockbeats.client.screen.DLPopupScreen;
 import de.mrjulsen.mcdragonlib.DragonLib;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLButton;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLScrollableWidgetContainer;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLTooltip;
-import de.mrjulsen.mcdragonlib.client.render.Sprite;
-import de.mrjulsen.mcdragonlib.client.util.Graphics;
-import de.mrjulsen.mcdragonlib.client.util.GuiAreaDefinition;
+import de.mrjulsen.mcdragonlib.client.gui.events.DLGuiStandardEvents;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLButton;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLTooltip;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.layout.FlowLayout;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.layout.FlowLayout.Direction;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.render.FlatButtonRenderer;
+import de.mrjulsen.mcdragonlib.client.util.DLGuiGraphics;
+import de.mrjulsen.mcdragonlib.client.util.DLSprite;
+import de.mrjulsen.mcdragonlib.client.util.DLTexture;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
-import de.mrjulsen.mcdragonlib.core.EAlignment;
+import de.mrjulsen.mcdragonlib.data.ETextAlignment;
+import de.mrjulsen.mcdragonlib.util.DLColor;
 import de.mrjulsen.mcdragonlib.util.TextUtils;
+import de.mrjulsen.mcdragonlib.util.math.Rectangle;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 
@@ -27,135 +30,83 @@ public class PlayerWidget extends DLButton {
 
     public static final int HEIGHT = 18;
 
-    private boolean selected;
+    private boolean picked;
 
     private final UUID playerId;
-    private final Sprite icon;
+    private final DLSprite icon;
     private final String name;
-    private final DLPopupScreen parent;
-    private final DLScrollableWidgetContainer parentContainer;
 
-    // Buttons
-    private int taskIndex = 1;
-    private Collection<Task> tasks = new ArrayList<>();
-
-    public PlayerWidget(DLPopupScreen parent, DLScrollableWidgetContainer parentContainer, int pX, int pY, int pWidth, UUID playerId, String name, @Nullable ResourceLocation skinLocation, Consumer<PlayerWidget> pOnPress, Collection<TaskBuilder> fileTasks) {
-        super(pX, pY, pWidth, HEIGHT, TextUtils.empty(), pOnPress);        
-        this.parent = parent;
+    public PlayerWidget(int pX, int pY, int pWidth, UUID playerId, String name, @Nullable ResourceLocation skinLocation, Consumer<PlayerWidget> pOnPress, Collection<TaskBuilder> fileTasks) {
+        super(pX, pY, pWidth, HEIGHT);
+        text.set(TextUtils.EMPTY);
+        addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+            pOnPress.accept(this);
+            return false;
+        });
+           
         this.playerId = playerId;
         this.name = name;
-        this.parentContainer = parentContainer;
         this.icon = getSkinIcon(skinLocation);
+
+        FlowLayout layout = new FlowLayout();
+        layout.flowDirection.set(Direction.HORIZONTAL);
+        layout.wrap.set(false);
+        this.layout.set(layout);
 
         for (TaskBuilder task : fileTasks) {                
             addTask(task.sprite(), task.text(), task.action());
         }
+
+        addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {            
+            picked = !picked;
+            return false;
+        });
     }
 
-    private Sprite getSkinIcon(ResourceLocation skinLocation) {
+    private DLSprite getSkinIcon(ResourceLocation skinLocation) {
         if (skinLocation != null) {
-            return new Sprite(skinLocation, 64, 64, 8, 8, 8, 8, 16, 16);
+            return new DLSprite(new DLTexture(skinLocation, 64, 64), 16, 16, 8, 8, 8, 8);
         }
         return ModGuiIcons.PLAYER.getAsSprite(16, 16);
     }
 
-    public void addTask(Sprite sprite, MutableComponent text, Consumer<PlayerWidget> action) {
-        tasks.add(new Task(getParent(), new GuiAreaDefinition(x() + width - 18 * taskIndex, y() + height / 2 - 9, 18, 18), sprite, DLTooltip.of(text).assignedTo(this).withMaxWidth(width), action));
-        taskIndex++;
-    }
-
-    public DLPopupScreen getParent() {
-        return parent;
+    public void addTask(DLSprite sprite, MutableComponent text, Consumer<PlayerWidget> action) {
+        DLButton btn = addComponent(new DLButton(0, 0, 18, 18));
+        btn.layoutContraint.set(FlowLayout.FlowConstraint.END);
+        btn.componentRenderer.set(FlatButtonRenderer.INSTANCE);
+        btn.text.set(TextUtils.empty());
+        btn.tooltip.set(new DLTooltip(List.of(text), 200));
+        btn.icon.set(sprite);
+        btn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+            action.accept(this);
+            return false;
+        });
     }
 
     public UUID getPlayerId() {
         return playerId;
     }
 
-    public boolean isSelected() {
-        return selected;
+    public boolean isPicked() {
+        return picked;
     }
 
     @Override
-    public void renderMainLayer(Graphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void renderMainLayer(DLGuiGraphics graphics, double mouseX, double mouseY, Rectangle renderBounds) {
         icon.render(graphics, x() + 1, y() + 1);
         if (isSelected()) {
-            GuiUtils.drawBox(graphics, GuiAreaDefinition.of(this), 0x339E9E9E, DragonLib.NATIVE_BUTTON_FONT_COLOR_DISABLED);
+            GuiUtils.drawBox(graphics, 0, 0, width(), height(), DLColor.fromInt(0x339E9E9E), DragonLib.VANILLA_BUTTON_DISABLED_FONT_COLOR);
         }
-        if (isMouseSelected()) {
-            GuiUtils.drawBox(graphics, GuiAreaDefinition.of(this), 0x33FFFFFF, DragonLib.NATIVE_BUTTON_FONT_COLOR_ACTIVE);
-            tasks.forEach(x -> x.render(graphics, mouseX, mouseY));
+        if (isSelected()) {
+            GuiUtils.drawBox(graphics, 0, 0, width(), height(), DLColor.fromInt(0x33FFFFFF), DragonLib.VANILLA_BUTTON_ACTIVE_FONT_COLOR);
         }
-        GuiUtils.drawString(graphics, font, x() + 5 + icon.getWidth(), y() + getHeight() / 2 - font.lineHeight / 2, name, isMouseSelected() || isSelected() ? DragonLib.NATIVE_BUTTON_FONT_COLOR_HIGHLIGHT : DragonLib.NATIVE_BUTTON_FONT_COLOR_ACTIVE, EAlignment.LEFT, false);
-    }    
-
-    @Override
-    public void renderFrontLayer(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderFrontLayer(graphics, mouseX, mouseY, partialTicks);
-        if (getParent().getAllowedLayer() == parentContainer.getWidgetLayerIndex()) {
-            tasks.forEach(x -> x.renderTooltip(graphics, mouseX, mouseY, (int)parentContainer.getXScrollOffset(), (int)parentContainer.getYScrollOffset()));
-        }
+        GuiUtils.drawString(graphics, graphics.defaultFont(), 5 + icon.getWidth(), height() / 2 - graphics.defaultFont().lineHeight / 2, name, isSelected() || isPicked() ? DragonLib.VANILLA_BUTTON_HIGHLIGHTED_FONT_COLOR : DragonLib.VANILLA_BUTTON_ACTIVE_FONT_COLOR, ETextAlignment.LEFT, false);
+        icon.render(graphics, 1, 1);
     }
 
-    @Override
-    public void onClick(double d, double e) {
-        selected = !selected;
-        super.onClick(d, e);
+    public void pick(boolean b) {
+        picked = b;
     }
 
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (isValidClickButton(button)) {
-            Optional<Task> task = tasks.stream().filter(x -> x.isOver((int)mouseX, (int)mouseY)).findFirst();
-            if (task.isPresent()) {
-                task.get().run(this);
-                GuiUtils.playButtonSound();
-                return true;
-            }
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    public void select(boolean b) {
-        selected = b;
-    }
-
-    public static class Task {
-        private final GuiAreaDefinition area;
-        private final Sprite sprite;
-        private final Consumer<PlayerWidget> action;
-        private final DLPopupScreen parent;
-        private final DLTooltip tooltip;
-        
-        public Task(DLPopupScreen parent, GuiAreaDefinition area, Sprite sprite, DLTooltip tooltip, Consumer<PlayerWidget> action) {
-            this.area = area;
-            this.sprite = sprite;
-            this.action = action;
-            this.parent = parent;
-            this.tooltip = tooltip;
-        }
-
-        public boolean isOver(int mouseX, int mouseY) {
-            return area.isInBounds(mouseX, mouseY);
-        }
-
-        public void run(PlayerWidget widget) {
-            action.accept(widget);
-        }
-
-        public void render(Graphics graphics, int mouseX, int mouseY) {
-            sprite.render(graphics, area.getX() + area.getWidth() / 2 - ModGuiIcons.ICON_SIZE / 2, area.getY() + area.getHeight() / 2 - ModGuiIcons.ICON_SIZE / 2);
-            if (isOver(mouseX, mouseY)) {                
-                GuiUtils.drawBox(graphics, area, 0x44FFFFFF, DragonLib.NATIVE_BUTTON_FONT_COLOR_ACTIVE);
-            }
-        }        
-
-        public void renderTooltip(Graphics graphics, int mouseX, int mouseY, int xOffset, int yOffset) {
-            if (isOver(mouseX + xOffset, mouseY + yOffset)) {
-                GuiUtils.renderTooltipAt(parent, GuiAreaDefinition.of(tooltip.getAssignedWidget()), tooltip.getLines(), tooltip.getMaxWidth(), graphics, mouseX + 8, mouseY - 16, mouseX + xOffset, mouseY + yOffset, 0, 0);
-            }
-        }
-    }
-
-    public static record TaskBuilder(Sprite sprite, MutableComponent text, Consumer<PlayerWidget> action) {}    
+    public static record TaskBuilder(DLSprite sprite, MutableComponent text, Consumer<PlayerWidget> action) {}    
 }

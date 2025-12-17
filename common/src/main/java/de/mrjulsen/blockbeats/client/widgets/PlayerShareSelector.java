@@ -11,29 +11,31 @@ import java.util.stream.Collectors;
 
 import de.mrjulsen.blockbeats.BlockBeats;
 import de.mrjulsen.blockbeats.client.ModGuiIcons;
-import de.mrjulsen.blockbeats.client.screen.DLPopupScreen;
 import de.mrjulsen.blockbeats.client.widgets.PlayerWidget.TaskBuilder;
 import de.mrjulsen.blockbeats.core.data.SharingUtils;
 import de.mrjulsen.blockbeats.core.data.SharingUtils.ShareData;
 import de.mrjulsen.blockbeats.net.cts.GetUsernameCachePacket;
+import de.mrjulsen.blockbeats.registry.ModNetworkManager;
 import de.mrjulsen.blockbeats.util.Utils;
 import de.mrjulsen.dragnsounds.api.ClientApi;
 import de.mrjulsen.dragnsounds.core.filesystem.SoundFile;
 import de.mrjulsen.mcdragonlib.DragonLib;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLAbstractScrollBar;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLScrollableWidgetContainer;
-import de.mrjulsen.mcdragonlib.client.util.Graphics;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLGuiComponent;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLScrollBar;
+import de.mrjulsen.mcdragonlib.client.render.DefaultGuiTextures;
+import de.mrjulsen.mcdragonlib.client.util.DLGuiGraphics;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
-import de.mrjulsen.mcdragonlib.core.EAlignment;
+import de.mrjulsen.mcdragonlib.data.ETextAlignment;
+import de.mrjulsen.mcdragonlib.network.NetworkDirection;
+import de.mrjulsen.mcdragonlib.util.math.Rectangle;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 
-public class PlayerShareSelector extends DLScrollableWidgetContainer {
+public class PlayerShareSelector extends DLGuiComponent {
 
     private final MutableComponent textSharedWith = Utils.trans("share", "shared_with");
     private final MutableComponent textOnlinePlayers = Utils.trans("share", "online_players");
@@ -43,16 +45,14 @@ public class PlayerShareSelector extends DLScrollableWidgetContainer {
     private final MutableComponent textCanEdit = Utils.trans("share", "can_edit").append("\n").append(textClickToToggle);
     private final MutableComponent textCannotEdit = Utils.trans("share", "cannot_edit").append("\n").append(textClickToToggle);
 
-    private final DLPopupScreen parent;
-    @SuppressWarnings("unused") private final Supplier<DLAbstractScrollBar<?>> scrollBar;
+    @SuppressWarnings("unused") private final Supplier<DLScrollBar> scrollBar;
     private SoundFile file;
     private int separatorY;
     private boolean isShared;
     private String filter = "";
 
-    public PlayerShareSelector(DLPopupScreen parent, int x, int y, int width, int height, SoundFile file, Supplier<DLAbstractScrollBar<?>> scrollBar) {
+    public PlayerShareSelector(int x, int y, int width, int height, SoundFile file, Supplier<DLScrollBar> scrollBar) {
         super(x, y, width, height);
-        this.parent = parent;
         this.scrollBar = scrollBar;        
         this.file = file;
         refresh("");
@@ -60,15 +60,15 @@ public class PlayerShareSelector extends DLScrollableWidgetContainer {
 
     public void refresh(String filter) {
         this.filter = filter;
-        clearWidgets();
+        clearComponents();
 
-        BlockBeats.net().sendToServer(GetUsernameCachePacket.create((usernamecache) -> {            
+        ModNetworkManager.GET_USERNAME_CACHE.send(NetworkDirection.toServer(), GetUsernameCachePacket.create((usernamecache) -> {            
             ClientPacketListener clientPacketListener = Minecraft.getInstance().player.connection;
             Map<UUID, PlayerInfo> infos = clientPacketListener.getOnlinePlayers().stream().collect(Collectors.toMap(x -> x.getProfile().getId(), x -> x));
             Set<UUID> shareEntries = SharingUtils.deserialize(file).keySet();
 
             isShared = !shareEntries.isEmpty();
-            final int minY = getY() + (isShared ? PlayerWidget.HEIGHT : 0);
+            final int minY = (isShared ? PlayerWidget.HEIGHT : 0);
             int dY = minY;
             for (UUID id : shareEntries) {
                 final UUID currentId = id;
@@ -95,7 +95,7 @@ public class PlayerShareSelector extends DLScrollableWidgetContainer {
                     reload(SharingUtils.serialize(shareData));
                 }));
 
-                addRenderableWidget(new PlayerWidget(parent, this, getX(), dY, getWidth(), id, name, skinLocation,
+                addComponent(new PlayerWidget(0, dY, width(), id, name, skinLocation,
                 (b) -> {
 
                 }, tasks));
@@ -111,7 +111,7 @@ public class PlayerShareSelector extends DLScrollableWidgetContainer {
                 }
 
                 final UUID currentId = info.getKey();
-                addRenderableWidget(new PlayerWidget(parent, this, getX(), dY, getWidth(), info.getValue().getProfile().getId(), info.getValue().getProfile().getName(), info.getValue().getSkinLocation(),
+                addComponent(new PlayerWidget(0, dY, width(), info.getValue().getProfile().getId(), info.getValue().getProfile().getName(), info.getValue().getSkinLocation(),
                 (b) -> {
 
                 }, List.of(
@@ -137,29 +137,15 @@ public class PlayerShareSelector extends DLScrollableWidgetContainer {
     }
     
     public int maxRequiredHeight() {
-        return (children().size()) * SoundFileWidget.HEIGHT;
+        return componentsCount() * SoundFileWidget.HEIGHT;
     }    
 
     @Override
-    public void renderMainLayerScrolled(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderMainLayerScrolled(graphics, mouseX, mouseY, partialTicks);
+    public void renderMainLayer(DLGuiGraphics graphics, double mouseX, double mouseY, Rectangle renderBounds) {
+        DefaultGuiTextures.DRAGONLIB_UI.getSprite("container").render(graphics, 0, 0, width(), height());
         if (isShared) {
-            GuiUtils.drawString(graphics, font, x + width / 2, getY() + PlayerWidget.HEIGHT / 2 - font.lineHeight / 2, textSharedWith, DragonLib.NATIVE_BUTTON_FONT_COLOR_DISABLED, EAlignment.CENTER, false);
+            GuiUtils.drawString(graphics, graphics.defaultFont(), width() / 2, PlayerWidget.HEIGHT / 2 - graphics.defaultFont().lineHeight / 2, textSharedWith, DragonLib.VANILLA_BUTTON_DISABLED_FONT_COLOR, ETextAlignment.CENTER, false);
         }
-        GuiUtils.drawString(graphics, font, x + width / 2, separatorY + PlayerWidget.HEIGHT / 2 - font.lineHeight / 2, textOnlinePlayers, DragonLib.NATIVE_BUTTON_FONT_COLOR_DISABLED, EAlignment.CENTER, false);
-    }
-
-    @Override
-    public NarrationPriority narrationPriority() {
-        return NarrationPriority.HOVERED;
-    }
-
-    @Override
-    public void updateNarration(NarrationElementOutput narrationElementOutput) {
-    }
-    
-    @Override
-    public boolean consumeScrolling(double mouseX, double mouseY) {
-        return isMouseOver(mouseX, mouseY);
+        GuiUtils.drawString(graphics, graphics.defaultFont(), width() / 2, separatorY + PlayerWidget.HEIGHT / 2 - graphics.defaultFont().lineHeight / 2, textOnlinePlayers, DragonLib.VANILLA_BUTTON_DISABLED_FONT_COLOR, ETextAlignment.CENTER, false);
     }
 }

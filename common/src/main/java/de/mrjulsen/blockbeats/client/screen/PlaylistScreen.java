@@ -1,13 +1,9 @@
 package de.mrjulsen.blockbeats.client.screen;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-
-import com.mojang.blaze3d.platform.InputConstants;
 
 import de.mrjulsen.blockbeats.BlockBeats;
 import de.mrjulsen.blockbeats.block.entity.SoundPlayerBlockEntity;
@@ -18,7 +14,6 @@ import de.mrjulsen.blockbeats.client.widgets.FileBrowserContainer.TaskBuilder;
 import de.mrjulsen.blockbeats.client.widgets.popup.FileSelectionPopup;
 import de.mrjulsen.blockbeats.client.widgets.popup.PlaybackAreaPopup;
 import de.mrjulsen.blockbeats.client.widgets.popup.PlaybackConfigPopup;
-import de.mrjulsen.blockbeats.client.widgets.popup.PopupWidget.IPopupBuilder;
 import de.mrjulsen.blockbeats.core.OrderedArrayList;
 import de.mrjulsen.blockbeats.core.data.ELoopMode;
 import de.mrjulsen.blockbeats.core.data.ERedstoneMode;
@@ -29,30 +24,36 @@ import de.mrjulsen.blockbeats.core.data.playback.RadiusPlaybackAreaBuilder;
 import de.mrjulsen.blockbeats.core.filters.SoundPlaylistFilter;
 import de.mrjulsen.blockbeats.events.ClientEvents;
 import de.mrjulsen.blockbeats.net.cts.SoundPlayerPacket;
+import de.mrjulsen.blockbeats.registry.ModNetworkManager;
 import de.mrjulsen.blockbeats.util.Utils;
 import de.mrjulsen.dragnsounds.core.filesystem.SoundFile;
 import de.mrjulsen.mcdragonlib.DragonLib;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLEditBox;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLIconButton;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLTooltip;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLVerticalScrollBar;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.IDragonLibWidget;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLAbstractImageButton.ButtonType;
-import de.mrjulsen.mcdragonlib.client.render.DynamicGuiRenderer;
+import de.mrjulsen.mcdragonlib.client.gui.events.DLGuiStandardEvents;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLWindow;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLWindowManager;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLButton;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLPanel;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLRichTextEditBox;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLRichTextLabel;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLScrollBar;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLTooltip;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLScrollBar.Orientation;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.richtext.DLAbstractRichTextInputField;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.util.EAlign;
+import de.mrjulsen.mcdragonlib.client.render.DefaultGuiTextures;
 import de.mrjulsen.mcdragonlib.client.render.GuiIcons;
-import de.mrjulsen.mcdragonlib.client.render.DynamicGuiRenderer.AreaStyle;
-import de.mrjulsen.mcdragonlib.client.util.Graphics;
-import de.mrjulsen.mcdragonlib.client.util.GuiAreaDefinition;
+import de.mrjulsen.mcdragonlib.client.util.DLGuiGraphics;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
-import de.mrjulsen.mcdragonlib.client.util.WidgetsCollection;
-import de.mrjulsen.mcdragonlib.core.EAlignment;
+import de.mrjulsen.mcdragonlib.data.ETextAlignment;
+import de.mrjulsen.mcdragonlib.network.NetworkDirection;
+import de.mrjulsen.mcdragonlib.util.DLColor;
 import de.mrjulsen.mcdragonlib.util.TextUtils;
+import de.mrjulsen.mcdragonlib.util.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
 
-public class PlaylistScreen extends DLPopupScreen {
+public class PlaylistScreen extends DLWindow {
 
     private static final int HEADER_HEIGHT = 40;
     private static final int FOOTER_HEIGHT = 40;
@@ -73,19 +74,14 @@ public class PlaylistScreen extends DLPopupScreen {
 
     // Settings
     private String searchTerm = "";
-    private DLVerticalScrollBar scrollBar;
+    private DLScrollBar scrollBar;
     private FileBrowserContainer container;
 
 
     private final SoundPlayerBlockEntity blockEntity;
 
     // Collections
-    private static final WidgetsCollection soundFileCollection = new WidgetsCollection();
-    private final Collection<DLTooltip> tooltips = new ArrayList<>();
-
-    private DLTooltip redstoneTooltip;
-    private DLTooltip loopTooltip;
-    private DLTooltip shuffleTooltip;
+    private final DLPanel soundFileCollection;
 
     // Settings
     private final OrderedArrayList<String> files = new OrderedArrayList<>();
@@ -102,8 +98,10 @@ public class PlaylistScreen extends DLPopupScreen {
     private boolean bgm;
     private boolean showLabel;
 
-    public PlaylistScreen(SoundPlayerBlockEntity blockEntity) {
-        super(trans("title"));
+    public PlaylistScreen(DLWindowManager manager, SoundPlayerBlockEntity blockEntity) {
+        super(manager);
+        fullscreen.set(true);
+
         this.blockEntity = blockEntity;
         this.files.addAll(blockEntity.getPlaylist().getFiles());
         this.loop = blockEntity.getPlaylist().getLoop();
@@ -116,33 +114,13 @@ public class PlaylistScreen extends DLPopupScreen {
         this.attenuationDistance = blockEntity.getAttenuationDistance();
         this.bgm = blockEntity.isBgm();
         this.showLabel = blockEntity.isShowLabel();
-    }
 
-    private static MutableComponent trans(String key) {
-        return TextUtils.translate("gui." + BlockBeats.MOD_ID + ".playlist_screen." + key);
-    }
 
-    private void updateRedstoneTooltip(DLIconButton btn) {
-        List<FormattedText> lines = ClientWrapper.getEnumTooltipData(BlockBeats.MOD_ID, ERedstoneMode.class, this.redstone, width / 2);
-        redstoneTooltip = DLTooltip.of(lines).assignedTo(btn);
-    }
 
-    private void updateLoopTooltip(DLIconButton btn) {
-        List<FormattedText> lines = ClientWrapper.getEnumTooltipData(BlockBeats.MOD_ID, ELoopMode.class, this.loop, width / 2);
-        loopTooltip = DLTooltip.of(lines).assignedTo(btn);
-    }
+        
+        soundFileCollection = new DLPanel(0, 0, 100, 100);
 
-    private void updateShuffleTooltip(DLIconButton btn) {
-        List<FormattedText> lines = ClientWrapper.getEnumTooltipData(BlockBeats.MOD_ID, EShuffleMode.class, this.shuffle, width / 2);
-        shuffleTooltip = DLTooltip.of(lines).assignedTo(btn);
-    }
-
-    @Override
-    protected void init() {
-        super.init();
-        soundFileCollection.clear();
-
-        container = addRenderableWidget(new FileBrowserContainer(this, 0, HEADER_HEIGHT, width - 8, height - HEADER_HEIGHT - FOOTER_HEIGHT, this::getScrollBar,
+        container = addComponent(new FileBrowserContainer(0, HEADER_HEIGHT, width() - 8, height() - HEADER_HEIGHT - FOOTER_HEIGHT, false, () -> scrollBar,
         List.of(new SoundPlaylistFilter(files)),
         orderedPlaylistSortFunc,
         (file) -> List.of(
@@ -171,43 +149,45 @@ public class PlaylistScreen extends DLPopupScreen {
                     }, true)
             )
         ));
-        scrollBar = addRenderableWidget(new DLVerticalScrollBar(width - 8, HEADER_HEIGHT, 8, height - HEADER_HEIGHT - FOOTER_HEIGHT, new GuiAreaDefinition(0, HEADER_HEIGHT, width, height - HEADER_HEIGHT - FOOTER_HEIGHT)))
-            .setAutoScrollerSize(true)
-            .setScreenSize(container.getHeight())
-            .setStepSize(15)
-            .setMaxScroll(container.maxRequiredHeight())
-            .withOnValueChanged((scrollbar) -> container.setYScrollOffset(scrollbar.getScrollValue()))
-        ;
+
+        scrollBar = addComponent(new DLScrollBar(width() - 8, HEADER_HEIGHT, 8, height() - HEADER_HEIGHT - FOOTER_HEIGHT, Orientation.VERTICAL));
+        scrollBar.scrollerSize.set(-1);
+        scrollBar.screenSize.set(container.height());
+        scrollBar.scrollSteps.set(15);
+        scrollBar.addEventListener(DLScrollBar.ValueChangedEvent.class, (s, e) -> {
+            container.setScrollOffsetY((int)e.value());
+            return false;
+        });
 
         // Widgts
-        DLEditBox box = addRenderableWidget(new DLEditBox(font, width - RIGHT_MARGIN - 100, HEADER_HEIGHT - 16 - TOOLBAR_MARGIN, 100, 16, TextUtils.empty()) {
-            @Override
-            public boolean keyPressed(int code, int scan, int mod) {
-                if (container != null && (code == InputConstants.KEY_RETURN || code == InputConstants.KEY_NUMPADENTER)) {
-                    container.setSearchFilter(getValue(), true);
-                    GuiUtils.playButtonSound();
-                }
-                return super.keyPressed(code, scan, mod);
-            }
-        }
-            .withHint(DragonLib.TEXT_SEARCH)
-            .withOnFocusChanged((b, focus) -> {
-
-            }
-        ));
-        box.setMaxLength(BlockBeats.MAX_FILENAME_LENGTH);
-        box.setResponder((value) -> {
-            searchTerm = value;
+        DLRichTextEditBox box = addComponent(new DLRichTextEditBox(width() - RIGHT_MARGIN - 100, HEADER_HEIGHT - 16 - TOOLBAR_MARGIN, 100, 16));
+        box.placeholderText.set(TextUtils.TEXT_SEARCH);
+        box.acceptAndCancelKeysEnabled.set(true);
+        box.text.get().set(searchTerm);
+        box.addEventListener(DLAbstractRichTextInputField.TextAcceptKeyPressedEvent.class, (s, e) -> {
+            container.setSearchFilter(box.text.get().getPlainText(), true);
+            GuiUtils.playButtonSound();
+            return false;
         });
-        box.setValue(searchTerm);
-        box.setBordered(true);
+        box.addEventListener(DLRichTextLabel.TextChangedEvent.class, (s, e) -> {
+            searchTerm = box.text.get().getPlainText();
+            return false;
+        });        
 
 
-        addButton(width - RIGHT_MARGIN - 80, height - FOOTER_HEIGHT + TOOLBAR_MARGIN, 80, 20, DragonLib.TEXT_CLOSE, (btn) -> onClose(), null).setRenderStyle(AreaStyle.DRAGONLIB);
+        DLButton closeBtn = addComponent(new DLButton(width() - RIGHT_MARGIN - 80, height() - FOOTER_HEIGHT + TOOLBAR_MARGIN, 80, 20));
+        closeBtn.text.set(TextUtils.TEXT_CLOSE);
+        closeBtn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+            getWindowManager().closeWindow(this);
+            return false;
+        });
         
-        DLIconButton addBtn = addRenderableWidget(new DLIconButton(ButtonType.DEFAULT, AreaStyle.DRAGONLIB, ModGuiIcons.ADD.getAsSprite(16, 16), LEFT_MARGIN, height - FOOTER_HEIGHT + TOOLBAR_MARGIN, 80, 20, textAdd,
-        (btn) -> {
-            setPopup((x, y, l, close) -> new FileSelectionPopup(this, l, width, height, close,
+        DLButton addBtn = addComponent(new DLButton(LEFT_MARGIN, height() - FOOTER_HEIGHT + TOOLBAR_MARGIN, 80, 20));
+        addBtn.icon.set(ModGuiIcons.ADD.getAsSprite(16, 16));
+        addBtn.text.set(textAdd);
+        addBtn.tooltip.set(new DLTooltip(List.of(descriptionAdd), 200));
+        addBtn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+            getWindowManager().createModal(mgr -> new FileSelectionPopup(mgr,
                 (selectedFiles) -> {
                     Set<String> fileSet = new LinkedHashSet<>(files);
                     fileSet.addAll(selectedFiles.stream().map(a -> a.toString()).toList());
@@ -216,56 +196,64 @@ public class PlaylistScreen extends DLPopupScreen {
                     refreshFileView();
                 }
             ));
-        }));
-        addBtn.withAlignment(EAlignment.LEFT);
-        addBtn.setBackColor(DragonLib.DEFAULT_BUTTON_COLOR);
-        addBtn.setFontColor(DragonLib.NATIVE_BUTTON_FONT_COLOR_ACTIVE);
-        tooltips.add(DLTooltip.of(ClientWrapper.split(descriptionAdd, width / 2, Style.EMPTY)).assignedTo(addBtn));
+            return false;
+        });
 
-        DLIconButton iconBtn;
-        iconBtn = addRenderableWidget(new DLIconButton(ButtonType.DEFAULT, AreaStyle.DRAGONLIB, this.redstone.getIcon().getAsSprite(16, 16), LEFT_MARGIN + 90, height - FOOTER_HEIGHT + TOOLBAR_MARGIN, 20, 20, null,
-        (btn) -> {
+        DLButton iconBtn;
+        iconBtn = addComponent(new DLButton(LEFT_MARGIN + 90, height() - FOOTER_HEIGHT + TOOLBAR_MARGIN, 20, 20));
+        iconBtn.text.set(TextUtils.EMPTY);
+        iconBtn.icon.set(this.redstone.getIcon().getAsSprite(16, 16));
+        iconBtn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+            DLButton btn = (DLButton)s;
             this.redstone = this.redstone.next();
-            btn.setBackColor(this.redstone.getButtonColor());
-            btn.setSprite(this.redstone.getIcon().getAsSprite(16, 16));
+            btn.icon.set(this.redstone.getIcon().getAsSprite(16, 16));
             updateRedstoneTooltip(btn);
-        }));
-        iconBtn.setBackColor(this.redstone.getButtonColor());
+            return false;
+        });        
         updateRedstoneTooltip(iconBtn);
-
-        iconBtn = addRenderableWidget(new DLIconButton(ButtonType.DEFAULT, AreaStyle.DRAGONLIB, this.shuffle.getIcon().getAsSprite(16, 16), LEFT_MARGIN + 110, height - FOOTER_HEIGHT + TOOLBAR_MARGIN, 20, 20, null,
-        (btn) -> {
+        
+        iconBtn = addComponent(new DLButton(LEFT_MARGIN + 110, height() - FOOTER_HEIGHT + TOOLBAR_MARGIN, 20, 20));
+        iconBtn.text.set(TextUtils.EMPTY);
+        iconBtn.icon.set(this.shuffle.getIcon().getAsSprite(16, 16));
+        iconBtn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+            DLButton btn = (DLButton)s;
             this.shuffle = this.shuffle.next();
-            btn.setBackColor(this.shuffle.getButtonColor());
-            btn.setSprite(this.shuffle.getIcon().getAsSprite(16, 16));
+            btn.icon.set(this.shuffle.getIcon().getAsSprite(16, 16));
             updateShuffleTooltip(btn);
-        }));
-        iconBtn.setBackColor(this.shuffle.getButtonColor());
-        updateShuffleTooltip(iconBtn);
-
-        iconBtn = addRenderableWidget(new DLIconButton(ButtonType.DEFAULT, AreaStyle.DRAGONLIB, this.loop.getIcon().getAsSprite(16, 16), LEFT_MARGIN + 130, height - FOOTER_HEIGHT + TOOLBAR_MARGIN, 20, 20, null,
-        (btn) -> {
+            return false;
+        });
+        updateShuffleTooltip(iconBtn);        
+        
+        iconBtn = addComponent(new DLButton(LEFT_MARGIN + 130, height() - FOOTER_HEIGHT + TOOLBAR_MARGIN, 20, 20));
+        iconBtn.text.set(TextUtils.EMPTY);
+        iconBtn.icon.set(this.loop.getIcon().getAsSprite(16, 16));
+        iconBtn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+            DLButton btn = (DLButton)s;
             this.loop = this.loop.next();
-            btn.setBackColor(this.loop.getButtonColor());
-            btn.setSprite(this.loop.getIcon().getAsSprite(16, 16));
+            btn.icon.set(this.loop.getIcon().getAsSprite(16, 16));
             updateLoopTooltip(btn);
-        }));
-        iconBtn.setBackColor(this.loop.getButtonColor());
+            return false;
+        });
         updateLoopTooltip(iconBtn);
-
-        iconBtn = addRenderableWidget(new DLIconButton(ButtonType.DEFAULT, AreaStyle.DRAGONLIB, ModGuiIcons.BOX.getAsSprite(16, 16), LEFT_MARGIN + 160, height - FOOTER_HEIGHT + TOOLBAR_MARGIN, 20, 20, null,
-        (btn) -> {
-            setPopup((x, y, l, close) -> new PlaybackAreaPopup(this, blockEntity.getBlockPos(), l, width, height, playbackArea, 
+        
+        iconBtn = addComponent(new DLButton(LEFT_MARGIN + 160, height() - FOOTER_HEIGHT + TOOLBAR_MARGIN, 20, 20));
+        iconBtn.text.set(TextUtils.EMPTY);
+        iconBtn.icon.set(ModGuiIcons.BOX.getAsSprite(16, 16));
+        iconBtn.tooltip.set(new DLTooltip(List.of(descriptionPlaybackArea), 200));
+        iconBtn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+            getWindowManager().createModal(mgr -> new PlaybackAreaPopup(mgr, blockEntity.getBlockPos(), playbackArea, 
             (areaSettings) -> {
                 this.playbackArea = areaSettings;
-            }, close));
-        }));
-        iconBtn.setBackColor(DragonLib.DEFAULT_BUTTON_COLOR);
-        tooltips.add(DLTooltip.of(ClientWrapper.split(descriptionPlaybackArea, width / 2, Style.EMPTY)).assignedTo(iconBtn));
+            }));
+            return false;
+        });
 
-        iconBtn = addRenderableWidget(new DLIconButton(ButtonType.DEFAULT, AreaStyle.DRAGONLIB, ModGuiIcons.SOUND.getAsSprite(16, 16), LEFT_MARGIN + 180, height - FOOTER_HEIGHT + TOOLBAR_MARGIN, 20, 20, null,
-        (btn) -> {
-            setPopup((x, y, l, close) -> new PlaybackConfigPopup(this, l, width, height, volume, pitch, attenuationDistance, bgm, showLabel, close,
+        iconBtn = addComponent(new DLButton(LEFT_MARGIN + 180, height() - FOOTER_HEIGHT + TOOLBAR_MARGIN, 20, 20));
+        iconBtn.text.set(TextUtils.EMPTY);
+        iconBtn.icon.set(ModGuiIcons.SOUND.getAsSprite(16, 16));
+        iconBtn.tooltip.set(new DLTooltip(List.of(descriptionPlaybackConfig), 200));
+        iconBtn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+            getWindowManager().createModal(mgr -> new PlaybackConfigPopup(mgr, volume, pitch, attenuationDistance, bgm, showLabel,
             (pop) -> {
                 this.volume = pop.getVolume();
                 this.pitch = pop.getPitch();
@@ -273,55 +261,54 @@ public class PlaylistScreen extends DLPopupScreen {
                 this.bgm = pop.isBgm();
                 this.showLabel = pop.isShowLabel();
             }));
-        }));
-        iconBtn.setBackColor(DragonLib.DEFAULT_BUTTON_COLOR);
-        tooltips.add(DLTooltip.of(ClientWrapper.split(descriptionPlaybackConfig, width / 2, Style.EMPTY)).assignedTo(iconBtn));
+            return false;
+        });
 
         if (blockEntity.getOwner().equals(Minecraft.getInstance().player.getUUID())) {
-            iconBtn = addRenderableWidget(new DLIconButton(ButtonType.DEFAULT, AreaStyle.DRAGONLIB, locked ? ModGuiIcons.LOCK.getAsSprite(16, 16) : ModGuiIcons.UNLOCK.getAsSprite(16, 16), LEFT_MARGIN + 210, height - FOOTER_HEIGHT + TOOLBAR_MARGIN, 20, 20, null,
-            (btn) -> {
+            iconBtn = addComponent(new DLButton(LEFT_MARGIN + 210, height() - FOOTER_HEIGHT + TOOLBAR_MARGIN, 20, 20));
+            iconBtn.text.set(TextUtils.EMPTY);
+            iconBtn.icon.set(locked ? ModGuiIcons.LOCK.getAsSprite(16, 16) : ModGuiIcons.UNLOCK.getAsSprite(16, 16));
+            iconBtn.tooltip.set(new DLTooltip(List.of(descriptionLock), 200));
+            iconBtn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+                DLButton btn = (DLButton)s; 
                 this.locked = !this.locked;
-                btn.setBackColor(locked ? DragonLib.WARN_BUTTON_COLOR : DragonLib.DEFAULT_BUTTON_COLOR);
-                btn.setSprite(locked ? ModGuiIcons.LOCK.getAsSprite(16, 16) : ModGuiIcons.UNLOCK.getAsSprite(16, 16));
-            }));
-            iconBtn.setBackColor(locked ? DragonLib.WARN_BUTTON_COLOR : DragonLib.DEFAULT_BUTTON_COLOR);
-            tooltips.add(DLTooltip.of(ClientWrapper.split(descriptionLock, width / 2, Style.EMPTY)).assignedTo(iconBtn));
+                btn.icon.set(locked ? ModGuiIcons.LOCK.getAsSprite(16, 16) : ModGuiIcons.UNLOCK.getAsSprite(16, 16));
+                return false;
+            });
         }
+        
+    }
+
+    private static MutableComponent trans(String key) {
+        return TextUtils.translate("gui." + BlockBeats.MOD_ID + ".playlist_screen." + key);
+    }
+
+    private void updateRedstoneTooltip(DLButton btn) {
+        List<FormattedText> lines = ClientWrapper.getEnumTooltipData(BlockBeats.MOD_ID, ERedstoneMode.class, this.redstone, 200);
+        btn.tooltip.set(new DLTooltip(lines, 200));
+    }
+
+    private void updateLoopTooltip(DLButton btn) {
+        List<FormattedText> lines = ClientWrapper.getEnumTooltipData(BlockBeats.MOD_ID, ELoopMode.class, this.loop, 200);
+        btn.tooltip.set(new DLTooltip(lines, 200));
+    }
+
+    private void updateShuffleTooltip(DLButton btn) {
+        List<FormattedText> lines = ClientWrapper.getEnumTooltipData(BlockBeats.MOD_ID, EShuffleMode.class, this.shuffle, 200);
+        btn.tooltip.set(new DLTooltip(lines, 200));
+    }
+
+    protected void init() {
     }
 
     public void refreshFileView() {
         container.setFilters(List.of(new SoundPlaylistFilter(files)), orderedPlaylistSortFunc, true);
     }
 
-    public DLVerticalScrollBar getScrollBar() {
-        return scrollBar;
-    }
-
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        setDragging(true);
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean mouseDragged(double d, double e, int i, double f, double g) {
-        return this.getFocused() != null && this.isDragging() && this.getFocused().mouseDragged(d, e, i, f, g);
-    }
-
-    @Override
-    public void setPopup(IPopupBuilder builder) {
-        int allowedLayer = getAllowedLayer() + 1;
-        setAllowedLayer(allowedLayer);
-        addRenderableWidget(builder.create(width, height, allowedLayer, p -> {
-            removeWidget(p);
-            setAllowedLayer(getAllowedLayer() - 1);
-        }));
-    }
-
-    @Override
-    public void onClose() {
+    public void close() throws Exception {
         files.retainAll(container.getFiles().stream().map(x -> x.toString()).toList());
-        BlockBeats.net().sendToServer(new SoundPlayerPacket(
+        ModNetworkManager.SOUND_PLAYER.send(NetworkDirection.toServer(), new SoundPlayerPacket(
             blockEntity.getBlockPos(),
             new Playlist(files, loop, shuffle, 0),
             playbackArea,
@@ -334,46 +321,20 @@ public class PlaylistScreen extends DLPopupScreen {
             locked
         ));
         ClientEvents.stopCurrentAudioSample();
-        super.onClose();
+        super.close();
     }
 
     @Override
-    public void renderMainLayer(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
-        renderScreenBackground(graphics);
-
+    public void renderMainLayer(DLGuiGraphics graphics, double mouseX, double mouseY, Rectangle renderBounds) {
         // WINDOW
-        DynamicGuiRenderer.renderWindow(graphics, new GuiAreaDefinition(-5, -5, width + 10, HEADER_HEIGHT + 5));
-        DynamicGuiRenderer.renderWindow(graphics, new GuiAreaDefinition(-5, height - FOOTER_HEIGHT, width + 10, FOOTER_HEIGHT + 5));
+        DefaultGuiTextures.DRAGONLIB_UI.getSprite(DefaultGuiTextures.SPRITE_NAME_WINDOW_ROUNDED).render(graphics, -5, -5, width() + 10, HEADER_HEIGHT + 5);
+        DefaultGuiTextures.DRAGONLIB_UI.getSprite(DefaultGuiTextures.SPRITE_NAME_WINDOW_ROUNDED).render(graphics, -5, height() - FOOTER_HEIGHT, width() + 10, FOOTER_HEIGHT + 5);
 
         // TITLE
-        GuiUtils.drawString(graphics, font, LEFT_MARGIN, HEADER_HEIGHT / 2 - font.lineHeight / 2, title, DragonLib.NATIVE_UI_FONT_COLOR, EAlignment.LEFT, false);
+        GuiUtils.drawString(graphics, graphics.defaultFont(), LEFT_MARGIN, HEADER_HEIGHT / 2 - graphics.defaultFont().lineHeight / 2, trans("title"), DragonLib.VANILLA_UI_FONT_COLOR, ETextAlignment.LEFT, false);
 
         // SHADOWS
-        GuiUtils.fillGradient(graphics, 0, HEADER_HEIGHT, 0, width, 10, 0x77000000, 0x00000000);
-        GuiUtils.fillGradient(graphics, 0, height - FOOTER_HEIGHT - 10, 0, width, 10, 0x00000000, 0x77000000);       
-
-        super.renderMainLayer(graphics, mouseX, mouseY, partialTicks);
-    }
-
-    @Override
-    public void renderFrontLayer(Graphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderFrontLayer(graphics, mouseX, mouseY, partialTick);
-        if (getAllowedLayer() != 0) {
-            return;
-        }
-
-        tooltips.forEach(x -> renderToolip(graphics, mouseX, mouseY, x));
-        renderToolip(graphics, mouseX, mouseY, redstoneTooltip);
-        renderToolip(graphics, mouseX, mouseY, loopTooltip);
-        renderToolip(graphics, mouseX, mouseY, shuffleTooltip);
-    }
-
-    private void renderToolip(Graphics graphics, int mouseX, int mouseY, DLTooltip tooltip) {
-        if (tooltip.getAssignedWidget() instanceof IDragonLibWidget wgt && !wgt.isMouseSelected()) {
-            return;
-        }
-        int i = tooltip.getLines().size() * (font.lineHeight + 1) + 8;
-        GuiUtils.renderTooltipAt(this, GuiAreaDefinition.of(tooltip.getAssignedWidget()), tooltip.getLines(), tooltip.getMaxWidth() > 0 ? tooltip.getMaxWidth() : this.width(), graphics, tooltip.getAssignedWidget().getX(), height - FOOTER_HEIGHT - i, mouseX, mouseY, 0, 0);  
-    }
-    
+        GuiUtils.fillGradient(graphics, 0, HEADER_HEIGHT, 0, width(), DLColor.fromInt(0x77000000), DLColor.BLACK, EAlign.TOP);
+        GuiUtils.fillGradient(graphics, 0, height() - FOOTER_HEIGHT - 10, 0, width(), DLColor.fromInt(0x77000000), DLColor.BLACK, EAlign.BOTTOM);       
+    }    
 }

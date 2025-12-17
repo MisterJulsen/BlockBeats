@@ -14,13 +14,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.lwjgl.glfw.GLFW;
-
 import de.mrjulsen.blockbeats.BlockBeats;
 import de.mrjulsen.blockbeats.client.ClientWrapper;
-import de.mrjulsen.blockbeats.client.screen.DLPopupScreen;
 import de.mrjulsen.blockbeats.core.filters.CaseInsensitiveMetadataFilter;
 import de.mrjulsen.blockbeats.net.cts.GetAdditionalFileDataPacket;
+import de.mrjulsen.blockbeats.registry.ModNetworkManager;
 import de.mrjulsen.blockbeats.util.Utils;
 import de.mrjulsen.dragnsounds.api.ClientApi;
 import de.mrjulsen.dragnsounds.core.data.ECompareOperation;
@@ -28,20 +26,24 @@ import de.mrjulsen.dragnsounds.core.data.filter.FileInfoFilter;
 import de.mrjulsen.dragnsounds.core.data.filter.IFilter;
 import de.mrjulsen.dragnsounds.core.filesystem.SoundFile;
 import de.mrjulsen.mcdragonlib.DragonLib;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLAbstractScrollBar;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLContextMenu;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLScrollableWidgetContainer;
-import de.mrjulsen.mcdragonlib.client.render.Sprite;
-import de.mrjulsen.mcdragonlib.client.util.Graphics;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLGuiComponent;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLContextMenu;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLScrollBar;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.layout.FlowLayout;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.layout.FlowLayout.Direction;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.richtext.Padding;
+import de.mrjulsen.mcdragonlib.client.render.DefaultGuiTextures;
+import de.mrjulsen.mcdragonlib.client.util.DLGuiGraphics;
+import de.mrjulsen.mcdragonlib.client.util.DLSprite;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
-import de.mrjulsen.mcdragonlib.core.EAlignment;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
+import de.mrjulsen.mcdragonlib.data.ETextAlignment;
+import de.mrjulsen.mcdragonlib.network.NetworkDirection;
+import de.mrjulsen.mcdragonlib.util.math.Rectangle;
 import net.minecraft.network.chat.MutableComponent;
 
-public class FileBrowserContainer extends DLScrollableWidgetContainer {
+public class FileBrowserContainer extends DLGuiComponent {
 
-    private final DLPopupScreen parent;
-    private final Supplier<DLAbstractScrollBar<?>> scrollBar;
+    private final Supplier<DLScrollBar> scrollBar;
     private final Function<SoundFile, Collection<TaskBuilder>> fileTasks;
 
     private final Set<SoundFile> files = new HashSet<>();
@@ -59,37 +61,34 @@ public class FileBrowserContainer extends DLScrollableWidgetContainer {
 
     // Events
     private Consumer<FileBrowserContainer> onSelectionChanged;
+    private final boolean renderBg;
 
-    public FileBrowserContainer(DLPopupScreen parent, int x, int y, int width, int height, Supplier<DLAbstractScrollBar<?>> scrollBar, Collection<IFilter<SoundFile>> filters, Comparator<SoundFile> sortFunc, Function<SoundFile, Collection<TaskBuilder>> fileTasks) {
+    public FileBrowserContainer(int x, int y, int width, int height, boolean renderBg, Supplier<DLScrollBar> scrollBar, Collection<IFilter<SoundFile>> filters, Comparator<SoundFile> sortFunc, Function<SoundFile, Collection<TaskBuilder>> fileTasks) {
         super(x, y, width, height);
-        this.parent = parent;
         this.scrollBar = scrollBar;
         this.fileTasks = fileTasks;
+        this.renderBg = renderBg;
         setFilters(filters, sortFunc, true);
-    }
 
-    public DLContextMenu getMenu() {
-        return menu;
-    }
+        FlowLayout layout = new FlowLayout();
+        layout.fillCrossAxis.set(true);
+        layout.flowDirection.set(Direction.VERTICAL);
+        layout.wrap.set(false);
+        layout.padding.set(new Padding(1));
+        this.layout.set(layout);
 
-    @Override
-    public void setMenu(DLContextMenu menu) {
-        this.menu = menu;
-    }
-
-    @Override
-    public int getContextMenuOpenButton() {
-        return GLFW.GLFW_MOUSE_BUTTON_RIGHT;
+        refresh();
     }
 
     public void refresh() {
-        clearWidgets();
+        clearComponents();
         Collection<IFilter<SoundFile>> filters = new ArrayList<>(this.filters);
         if (searchTerm != null) {
             filters.add(searchTerm);
         }
         filters.add(new FileInfoFilter(FileInfoFilter.KEY_LOCATION, ClientWrapper.location(BlockBeats.SOUND_PLAYER_CATEGORY).toString(), ECompareOperation.STARTS_WITH));
-        BlockBeats.net().sendToServer(GetAdditionalFileDataPacket.create((favs, usernamecache) -> {
+        
+        ModNetworkManager.GET_ADDITIONAL_FILE_DATA.send(NetworkDirection.toServer(), GetAdditionalFileDataPacket.create((favs, usernamecache) -> {
             this.localUsernamecache = usernamecache;
             this.favPaths = favs;
             ClientApi.getAllSoundFiles(filters, (files) -> {
@@ -128,15 +127,16 @@ public class FileBrowserContainer extends DLScrollableWidgetContainer {
     }
 
     public void loadFiles(List<SoundFile> files) {
-        clearWidgets();
+        clearComponents();
         this.files.clear();
         this.files.addAll(files);
         for (int i = 0; i < files.size(); i++) {
-            addRenderableWidget(new SoundFileWidget(parent, this, x, y + i * SoundFileWidget.HEIGHT, width, files.get(i), (btn) -> {
-                if (btn.isSelected()) {
+            final int k = i;
+            addComponent(new SoundFileWidget(this, 0, 0, width(), files.get(k), (btn) -> {
+                if (btn.isPicked()) {
                     selectedFiles.add(btn.getAttachedSoundFile());
                     if (!canMultiselect()) {
-                        children().stream().filter(x -> x != btn && x instanceof SoundFileWidget).map(x -> (SoundFileWidget)x).forEach(x -> x.select(false));
+                        getComponentsOfType(SoundFileWidget.class, true).forEach(x -> x.select(false));
                     }
                 } else {
                     selectedFiles.remove(btn.getAttachedSoundFile());
@@ -145,16 +145,16 @@ public class FileBrowserContainer extends DLScrollableWidgetContainer {
                 if (onSelectionChanged != null) {
                     onSelectionChanged.accept(this);
                 }
-            }, fileTasks.apply(files.get(i))));
+            }, fileTasks.apply(files.get(k))));
         }
         if (scrollBar.get() != null) {
-            scrollBar.get().setMaxScroll(maxRequiredHeight());
+            scrollBar.get().max.set(maxRequiredHeight());
             scrollBar.get().scrollTo(0);
         }
     }
     
     public int maxRequiredHeight() {
-        return (children().size()) * SoundFileWidget.HEIGHT;
+        return (componentsCount()) * SoundFileWidget.HEIGHT;
     }    
 
     public boolean canMultiselect() {
@@ -178,27 +178,15 @@ public class FileBrowserContainer extends DLScrollableWidgetContainer {
     }
 
     @Override
-    public void renderMainLayerScrolled(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderMainLayerScrolled(graphics, mouseX, mouseY, partialTicks);
-        if (children.isEmpty()) {
-            GuiUtils.drawString(graphics, font, x + width / 2, y + 50, Utils.trans("file_container", "empty"), DragonLib.NATIVE_BUTTON_FONT_COLOR_DISABLED, EAlignment.CENTER, false);
+    public void renderMainLayer(DLGuiGraphics graphics, double mouseX, double mouseY, Rectangle renderBounds) {
+        if (renderBg) {
+            DefaultGuiTextures.DRAGONLIB_UI.getSprite("container").render(graphics, 0, 0, width(), height());
+        }
+        if (getComponents().isEmpty()) {
+            GuiUtils.drawString(graphics, graphics.defaultFont(), width() / 2, 50, Utils.trans("file_container", "empty"), DragonLib.VANILLA_BUTTON_DISABLED_FONT_COLOR, ETextAlignment.CENTER, false);
         }
     }
 
-    @Override
-    public NarrationPriority narrationPriority() {
-        return NarrationPriority.HOVERED;
-    }
-
-    @Override
-    public void updateNarration(NarrationElementOutput narrationElementOutput) {
-    }
-    
-    @Override
-    public boolean consumeScrolling(double mouseX, double mouseY) {
-        return false;
-    }
-
-    public static record TaskBuilder(Sprite sprite, MutableComponent text, Consumer<SoundFileWidget> action, boolean addButton) {}
+    public static record TaskBuilder(DLSprite sprite, MutableComponent text, Consumer<SoundFileWidget> action, boolean addButton) {}
     
 }

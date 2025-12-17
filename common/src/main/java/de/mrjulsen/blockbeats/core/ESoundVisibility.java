@@ -2,11 +2,11 @@ package de.mrjulsen.blockbeats.core;
 
 import java.util.Arrays;
 
-import de.mrjulsen.mcdragonlib.core.ITranslatableEnum;
+import de.mrjulsen.blockbeats.BlockBeats;
+import de.mrjulsen.mcdragonlib.data.ITranslatableEnum;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.StringRepresentable;
 
-public enum ESoundVisibility implements StringRepresentable, ITranslatableEnum {
+public enum ESoundVisibility implements ITranslatableEnum {
     PRIVATE(0, "private", new ResourceLocation("textures/item/music_disc_mall.png")),
     SHARED(1, "shared", new ResourceLocation("textures/item/music_disc_13.png")),
     PUBLIC(2, "public", new ResourceLocation("textures/item/music_disc_cat.png"));
@@ -42,17 +42,7 @@ public enum ESoundVisibility implements StringRepresentable, ITranslatableEnum {
     }
 
     @Override
-    public String getEnumName() {
-        return "sound_visibility";
-    }
-
-    @Override
-    public String getEnumValueName() {
-        return getName();
-    }
-
-    @Override
-    public String getSerializedName() {
-        return getName();
+    public Data getTranslationData() {
+        return new Data(BlockBeats.MOD_ID, "sound_visibility", name);
     }
 }

@@ -2,13 +2,12 @@ package de.mrjulsen.blockbeats.client.widgets;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Optional;
+import java.util.List;
 import java.util.function.Consumer;
 
 import de.mrjulsen.blockbeats.BlockBeats;
 import de.mrjulsen.blockbeats.client.ClientWrapper;
 import de.mrjulsen.blockbeats.client.ModGuiIcons;
-import de.mrjulsen.blockbeats.client.screen.DLPopupScreen;
 import de.mrjulsen.blockbeats.client.widgets.FileBrowserContainer.TaskBuilder;
 import de.mrjulsen.blockbeats.client.widgets.popup.SoundFileInfoPopupWidget;
 import de.mrjulsen.blockbeats.core.ESoundVisibility;
@@ -18,24 +17,34 @@ import de.mrjulsen.dragnsounds.core.filesystem.SoundFile;
 import de.mrjulsen.dragnsounds.core.filesystem.SoundLocation;
 import de.mrjulsen.dragnsounds.events.ServerEvents;
 import de.mrjulsen.mcdragonlib.DragonLib;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLButton;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLContextMenu;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLContextMenuItem;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLTooltip;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLContextMenuItem.ContextMenuItemData;
-import de.mrjulsen.mcdragonlib.client.render.Sprite;
-import de.mrjulsen.mcdragonlib.client.util.Graphics;
-import de.mrjulsen.mcdragonlib.client.util.GuiAreaDefinition;
+import de.mrjulsen.mcdragonlib.client.gui.events.DLGuiStandardEvents;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLButton;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLContextMenu;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLPanel;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.layout.BorderLayout;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.layout.FlowLayout;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.layout.FlowLayout.Direction;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.render.FlatButtonRenderer;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.richtext.Padding;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLTooltip;
+import de.mrjulsen.mcdragonlib.client.util.DLGuiGraphics;
+import de.mrjulsen.mcdragonlib.client.util.DLSprite;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
-import de.mrjulsen.mcdragonlib.core.EAlignment;
+import de.mrjulsen.mcdragonlib.client.util.GuiUtils.TextureFillMode;
+import de.mrjulsen.mcdragonlib.data.ETextAlignment;
+import de.mrjulsen.mcdragonlib.util.DLColor;
 import de.mrjulsen.mcdragonlib.util.IOUtils;
 import de.mrjulsen.mcdragonlib.util.TextUtils;
-import de.mrjulsen.mcdragonlib.util.TimeUtils;
+import de.mrjulsen.mcdragonlib.util.math.Rectangle;
+import de.mrjulsen.mcdragonlib.util.time.DLTime;
+import de.mrjulsen.mcdragonlib.util.time.TimeContext;
+import de.mrjulsen.mcdragonlib.util.time.VanillaTimeSystem;
+import de.mrjulsen.mcdragonlib.util.time.format.TimeFormatDigitalDuration;
 import net.minecraft.Util;
 import net.minecraft.network.chat.MutableComponent;
 
 public class SoundFileWidget extends DLButton {
-
+    
     private final MutableComponent txtPlay = Utils.trans("sound_file", "play");
     private final MutableComponent textOpenLocation = Utils.trans("sound_file", "open_location");
     private final MutableComponent textRefresh = Utils.trans("sound_file", "refresh");
@@ -43,23 +52,70 @@ public class SoundFileWidget extends DLButton {
 
     public static final int HEIGHT = 34;
 
-    private boolean selected;
+    private boolean picked;
 
     private final SoundFile file;
-    private final DLPopupScreen parent;
     private final FileBrowserContainer parentContainer;
+    private final DLPanel buttonsPanel;
 
-    // Buttons
-    private int taskIndex = 1;
-    private Collection<Task> tasks = new ArrayList<>();
-    private final GuiAreaDefinition playButton;
 
-    public SoundFileWidget(DLPopupScreen parent, FileBrowserContainer parentContainer, int pX, int pY, int pWidth, SoundFile file, Consumer<SoundFileWidget> pOnPress, Collection<TaskBuilder> fileTasks) {
-        super(pX, pY, pWidth, HEIGHT, TextUtils.empty(), pOnPress);
+    public SoundFileWidget(FileBrowserContainer parentContainer, int pX, int pY, int pWidth, SoundFile file, Consumer<SoundFileWidget> pOnPress, Collection<TaskBuilder> fileTasks) {
+        super(pX, pY, pWidth, HEIGHT);
+        text.set(TextUtils.empty());
+        addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {            
+            picked = !picked;
+            pOnPress.accept(this);
+            return false;
+        });
+
+        addEventListener(DLGuiStandardEvents.MouseEnterEvent.class, (s, e) -> {
+            getComponents().forEach(c -> c.visible.set(true));
+            return false;
+        });
+
+        addEventListener(DLGuiStandardEvents.MouseLeaveEvent.class, (s, e) -> {
+            getComponents().forEach(c -> c.visible.set(false));
+            return false;
+        });
+
         this.file = file;
-        this.parent = parent;
         this.parentContainer = parentContainer;
-        
+
+        DLContextMenu contextMenu = new DLContextMenu((x, y) -> {
+            List<DLContextMenu.ItemEntry> entries = new ArrayList<>();
+            entries.add(new DLContextMenu.ItemEntry(txtPlay, ModGuiIcons.PLAY_SMALL.getAsSprite(16, 16), true, () -> {
+                playSample();
+            }, null));
+            entries.add(DLContextMenu.ItemEntry.SEPARATOR);
+            entries.add(new DLContextMenu.ItemEntry(textOpenLocation, ModGuiIcons.FOLDER.getAsSprite(16, 16), true, () -> {
+                try {
+                    file.getLocation().setLevel(ServerEvents.getCurrentServer().overworld());
+                    Util.getPlatform().openFile(file.getLocation().resolve().orElse(SoundLocation.getModDirectory(ServerEvents.getCurrentServer().overworld())).toFile());
+                } catch (Exception e) {
+                    BlockBeats.LOGGER.error("Unable to open file location.", e);
+                }
+            }, null));
+            entries.add(new DLContextMenu.ItemEntry(textRefresh, ModGuiIcons.REFRESH.getAsSprite(16, 16), true, () -> {
+                parentContainer.refresh();
+            }, null));
+
+            for (TaskBuilder task : fileTasks) {
+                final TaskBuilder fTask = task;
+                entries.add(new DLContextMenu.ItemEntry(fTask.text(), fTask.sprite(), true, () -> {
+                    fTask.action().accept(this);
+                }, null));
+            }
+            entries.add(DLContextMenu.ItemEntry.SEPARATOR);            
+            entries.add(new DLContextMenu.ItemEntry(textProperties, ModGuiIcons.INFO.getAsSprite(16, 16), true, () -> {
+                getWindowManager().createModal(mgr -> new SoundFileInfoPopupWidget(mgr, file));
+            }, null));
+            return entries;
+        });
+        addEventListener(DLGuiStandardEvents.RightClickEvent.class, (s, e) -> {
+            contextMenu.open(getWindowManager());
+            return false;
+        });
+        /*
         setMenu(new DLContextMenu(() -> GuiAreaDefinition.of(this), () -> {
             DLContextMenuItem.Builder builder = new DLContextMenuItem.Builder()
             .add(new ContextMenuItemData(txtPlay, ModGuiIcons.PLAY_SMALL.getAsSprite(16, 16), true, (btn) -> {
@@ -67,12 +123,7 @@ public class SoundFileWidget extends DLButton {
             }, null))
             .addSeparator()
             .add(new ContextMenuItemData(textOpenLocation, ModGuiIcons.FOLDER.getAsSprite(16, 16), active, (menuItem) -> {
-                try {
-                    file.getLocation().setLevel(ServerEvents.getCurrentServer().overworld());
-                    Util.getPlatform().openFile(file.getLocation().resolve().orElse(SoundLocation.getModDirectory(ServerEvents.getCurrentServer().overworld())).toFile());
-                } catch (Exception e) {
-                    BlockBeats.LOGGER.error("Unable to open file location.", e);
-                }
+                
             }, null))
             .add(new ContextMenuItemData(textRefresh, ModGuiIcons.REFRESH.getAsSprite(16, 16), active, (menuItem) -> {
                 parentContainer.refresh();
@@ -89,6 +140,32 @@ public class SoundFileWidget extends DLButton {
 
             return builder;
         }));
+        */
+
+        buttonsPanel = addComponent(new DLPanel(0, 0, 1, 1));
+        buttonsPanel.inputConsumptionPolicy.set(c -> false);
+        buttonsPanel.layoutContraint.set(BorderLayout.BorderPosition.CENTER);
+        buttonsPanel.visible.set(false);
+        FlowLayout layout = new FlowLayout();
+        layout.flowDirection.set(Direction.HORIZONTAL);
+        layout.wrap.set(false);
+        layout.padding.set(new Padding(8, 8, 8, 8));
+        buttonsPanel.layout.set(layout);
+
+        DLButton playBtn = addComponent(new DLButton(0, 0, HEIGHT, HEIGHT));
+        playBtn.layoutContraint.set(BorderLayout.BorderPosition.WEST);
+        playBtn.inputConsumptionPolicy.set(c -> c != ConsumptionType.MOUSE_MOVE);
+        playBtn.text.set(TextUtils.EMPTY);
+        playBtn.icon.set(ModGuiIcons.PLAY.getAsSprite(16, 16));
+        playBtn.componentRenderer.set(FlatButtonRenderer.INSTANCE);
+        playBtn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+            playSample();
+            return false;
+        });
+
+
+        BorderLayout borderLayout = new BorderLayout(0, 0);
+        this.layout.set(borderLayout);
 
         for (TaskBuilder task : fileTasks) {
             if (!task.addButton())
@@ -96,13 +173,20 @@ public class SoundFileWidget extends DLButton {
                 
             addTask(task.sprite(), task.text(), task.action());
         }
-
-        playButton = new GuiAreaDefinition(x(), y(), 34, 34);
     }
 
-    public void addTask(Sprite sprite, MutableComponent text, Consumer<SoundFileWidget> action) {
-        tasks.add(new Task(getParent(), new GuiAreaDefinition(x() + width - 10 - 20 * taskIndex, y() + height / 2 - 10, 20, 20), sprite, DLTooltip.of(text).assignedTo(this).withMaxWidth(width / 4), action));
-        taskIndex++;
+    public void addTask(DLSprite sprite, MutableComponent text, Consumer<SoundFileWidget> action) {
+        DLButton btn = buttonsPanel.addComponent(new DLButton(0, 0, 18, 18));
+        btn.componentRenderer.set(FlatButtonRenderer.INSTANCE);
+        btn.text.set(TextUtils.empty());
+        btn.layoutContraint.set(FlowLayout.FlowConstraint.END);
+        btn.inputConsumptionPolicy.set(c -> c != ConsumptionType.MOUSE_MOVE);
+        btn.tooltip.set(new DLTooltip(List.of(text), 200));
+        btn.icon.set(sprite);
+        btn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+            action.accept(this);
+            return false;
+        });
     }
 
     public void playSample() {
@@ -113,134 +197,47 @@ public class SoundFileWidget extends DLButton {
         }
     }
 
-    public DLPopupScreen getParent() {
-        return parent;
-    }
-
     public SoundFile getAttachedSoundFile() {
         return file;
     }
 
-    public boolean isSelected() {
-        return selected;
+    public boolean isPicked() {
+        return picked;
     }
 
     @Override
-    public void renderMainLayer(Graphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void renderMainLayer(DLGuiGraphics graphics, double mouseX, double mouseY, Rectangle renderBounds) {
         final float scale = 0.75f;
-        int textRight = isMouseSelected() ? x() + getWidth() - 20 * taskIndex : x() + getWidth() - 15;
-        String timeString = TimeUtils.formatDurationMs(file.getInfo().getDuration());
+        int textRight = isSelected() ? width() - 20 * buttonsPanel.componentsCount() - 10 : width() - 10;
+        String timeString = DLTime.fromReal(0, 0, 0, (int)file.getInfo().getDuration(), 0, VanillaTimeSystem.INSTANCE).format(new TimeFormatDigitalDuration(), TimeContext.REAL);
         String sizeString = IOUtils.formatBytes(file.getInfo().getSize());
-        String nameString = String.format("%s (%s)", parentContainer.getUsername(file.getInfo().getOwnerId()), TextUtils.translate(ESoundVisibility.getByName(file.getMetadataSafe(BlockBeats.META_VISIBILITY)).getValueTranslationKey(BlockBeats.MOD_ID)).getString());
+        String nameString = String.format("%s (%s)", parentContainer.getUsername(file.getInfo().getOwnerId()), ESoundVisibility.getByName(file.getMetadataSafe(BlockBeats.META_VISIBILITY)).getValueTranslation().getString());
 
-        GuiUtils.drawString(graphics, font, textRight, y() + 5, timeString, DragonLib.NATIVE_BUTTON_FONT_COLOR_ACTIVE, EAlignment.RIGHT, false);
+        GuiUtils.drawString(graphics, graphics.defaultFont(), textRight,5, timeString, DragonLib.VANILLA_BUTTON_ACTIVE_FONT_COLOR, ETextAlignment.RIGHT, false);
         graphics.poseStack().pushPose();
         graphics.poseStack().scale(scale, scale, 1);        
-        GuiUtils.drawString(graphics, font, (int)(textRight / scale), (int)((y() + 15) / scale), sizeString, DragonLib.NATIVE_BUTTON_FONT_COLOR_DISABLED, EAlignment.RIGHT, false);
-        GuiUtils.drawString(graphics, font, (int)(textRight / scale), (int)((y() + 23) / scale), nameString, DragonLib.NATIVE_BUTTON_FONT_COLOR_DISABLED, EAlignment.RIGHT, false);
+        GuiUtils.drawString(graphics, graphics.defaultFont(), (int)(textRight / scale), (int)((15) / scale), sizeString, DragonLib.VANILLA_BUTTON_ACTIVE_FONT_COLOR, ETextAlignment.RIGHT, false);
+        GuiUtils.drawString(graphics, graphics.defaultFont(), (int)(textRight / scale), (int)((23) / scale), nameString, DragonLib.VANILLA_BUTTON_ACTIVE_FONT_COLOR, ETextAlignment.RIGHT, false);
         graphics.poseStack().popPose();
         
         
         int labelX = x() + 1 + 32 + 5;
-        GuiUtils.drawString(graphics, font, labelX, y() + 5, ClientWrapper.textCutOff(TextUtils.text(file.getDisplayName()), textRight - labelX - 10 - font.width(timeString)), DragonLib.NATIVE_BUTTON_FONT_COLOR_ACTIVE, EAlignment.LEFT, false);
-        GuiUtils.drawString(graphics, font, labelX, y() + 20, ClientWrapper.textCutOff(TextUtils.text(file.getInfo().getArtist()), textRight - labelX - 10 - font.width(sizeString)), DragonLib.NATIVE_BUTTON_FONT_COLOR_DISABLED, EAlignment.LEFT, false);
+        GuiUtils.drawString(graphics, graphics.defaultFont(), labelX, 5, ClientWrapper.textCutOff(TextUtils.text(file.getDisplayName()), textRight - labelX - 10 - graphics.defaultFont().width(timeString)), DragonLib.VANILLA_BUTTON_ACTIVE_FONT_COLOR, ETextAlignment.LEFT, false);
+        GuiUtils.drawString(graphics, graphics.defaultFont(), labelX, 20, ClientWrapper.textCutOff(TextUtils.text(file.getInfo().getArtist()), textRight - labelX - 10 - graphics.defaultFont().width(sizeString)), DragonLib.VANILLA_BUTTON_ACTIVE_FONT_COLOR, ETextAlignment.LEFT, false);
 
-        GuiUtils.drawTexture(ESoundVisibility.getByName(file.getMetadataSafe(BlockBeats.META_VISIBILITY)).getIconLocation(), graphics, x() + 1, y() + 1, 32, 32);
-        GuiUtils.fill(graphics, x() + 10, y() + getHeight() - 1, getWidth() - 20, 1, 0x68888888);
+        GuiUtils.drawTexture(ESoundVisibility.getByName(file.getMetadataSafe(BlockBeats.META_VISIBILITY)).getIconLocation(), graphics, 1, 1, 32, 32, 0, 0, 16, 16, TextureFillMode.STRETCH, 16, 16);
+        GuiUtils.fill(graphics, 10, height() - 1, width() - 20, 1, DLColor.fromInt(0x68888888));
 
-        if (selected) {
-            GuiUtils.drawBox(graphics, GuiAreaDefinition.of(this), 0x339E9E9E, DragonLib.NATIVE_BUTTON_FONT_COLOR_DISABLED);
+        if (picked) {
+            GuiUtils.drawBox(graphics, 0, 0, width(), height(), DLColor.fromInt(0x339E9E9E), DragonLib.VANILLA_BUTTON_DISABLED_FONT_COLOR);
         }
 
-        if (isMouseSelected() && getParent().getAllowedLayer() == parentContainer.getWidgetLayerIndex()) {
-            GuiUtils.drawBox(graphics, GuiAreaDefinition.of(this), 0x33FFFFFF, DragonLib.NATIVE_BUTTON_FONT_COLOR_ACTIVE);
-            tasks.forEach(x -> x.render(graphics, mouseX, mouseY));
-            
-            if (ClientEvents.getCurrentAudioSamplePath().equals(file.toString())) {
-                ModGuiIcons.PAUSE.render(graphics, playButton.getX() + playButton.getWidth() / 2 - ModGuiIcons.ICON_SIZE / 2, playButton.getY() + playButton.getHeight() / 2 - ModGuiIcons.ICON_SIZE / 2);
-            } else {
-                ModGuiIcons.PLAY.render(graphics, playButton.getX() + playButton.getWidth() / 2 - ModGuiIcons.ICON_SIZE / 2, playButton.getY() + playButton.getHeight() / 2 - ModGuiIcons.ICON_SIZE / 2);
-            }
-
-            if (playButton.isInBounds(mouseX, mouseY)) {
-                GuiUtils.drawBox(graphics, playButton, 0x44FFFFFF, DragonLib.NATIVE_BUTTON_FONT_COLOR_ACTIVE);
-            }
+        if (isSelected()) {
+            GuiUtils.drawBox(graphics, 0, 0, width(), height(), DLColor.fromInt(0x33FFFFFF), DragonLib.VANILLA_BUTTON_ACTIVE_FONT_COLOR);
         }        
     }
 
-    @Override
-    public void renderFrontLayer(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderFrontLayer(graphics, mouseX, mouseY, partialTicks);
-        if (getParent().getAllowedLayer() == parentContainer.getWidgetLayerIndex()) {
-            tasks.forEach(x -> x.renderTooltip(graphics, mouseX, mouseY, (int)parentContainer.getXScrollOffset(), (int)parentContainer.getYScrollOffset()));
-        }
-    }
-
-    @Override
-    public void onClick(double d, double e) {
-        selected = !selected;
-        super.onClick(d, e);
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (isValidClickButton(button)) {
-
-            if (playButton.isInBounds(mouseX, mouseY)) {
-                playSample();
-                GuiUtils.playButtonSound();
-                return true;
-            }
-
-            Optional<Task> task = tasks.stream().filter(x -> x.isOver((int)mouseX, (int)mouseY)).findFirst();
-            if (task.isPresent()) {
-                task.get().run(this);
-                GuiUtils.playButtonSound();
-                return true;
-            }
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
-
     public void select(boolean b) {
-        selected = b;
-    }
-
-    public static class Task {
-        private final GuiAreaDefinition area;
-        private final Sprite sprite;
-        private final Consumer<SoundFileWidget> action;
-        private final DLTooltip tooltip;
-        private final DLPopupScreen parent;
-        
-        public Task(DLPopupScreen parent, GuiAreaDefinition area, Sprite sprite, DLTooltip tooltip, Consumer<SoundFileWidget> action) {
-            this.area = area;
-            this.sprite = sprite;
-            this.action = action;
-            this.tooltip = tooltip;
-            this.parent = parent;
-        }
-
-        public boolean isOver(int mouseX, int mouseY) {
-            return area.isInBounds(mouseX, mouseY);
-        }
-
-        public void run(SoundFileWidget widget) {
-            action.accept(widget);
-        }
-
-        public void render(Graphics graphics, int mouseX, int mouseY) {
-            sprite.render(graphics, area.getX() + area.getWidth() / 2 - ModGuiIcons.ICON_SIZE / 2, area.getY() + area.getHeight() / 2 - ModGuiIcons.ICON_SIZE / 2);
-            if (isOver(mouseX, mouseY)) {                
-                GuiUtils.drawBox(graphics, area, 0x44FFFFFF, DragonLib.NATIVE_BUTTON_FONT_COLOR_ACTIVE);
-            }
-        }
-
-        public void renderTooltip(Graphics graphics, int mouseX, int mouseY, int xOffset, int yOffset) {
-            if (isOver(mouseX + xOffset, mouseY + yOffset)) {
-                GuiUtils.renderTooltipAt(parent, GuiAreaDefinition.of(tooltip.getAssignedWidget()), tooltip.getLines(), tooltip.getMaxWidth(), graphics, mouseX + 8, mouseY - 16, mouseX + xOffset, mouseY + yOffset, 0, 0);
-            }
-        }
-    }
-    
+        picked = b;
+    }    
 }

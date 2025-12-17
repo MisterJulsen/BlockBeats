@@ -3,10 +3,11 @@ package de.mrjulsen.blockbeats.client;
 import java.util.Arrays;
 
 import de.mrjulsen.blockbeats.BlockBeats;
-import de.mrjulsen.mcdragonlib.client.render.Sprite;
-import de.mrjulsen.mcdragonlib.client.util.Graphics;
+import de.mrjulsen.mcdragonlib.client.util.DLGuiGraphics;
+import de.mrjulsen.mcdragonlib.client.util.DLSprite;
+import de.mrjulsen.mcdragonlib.client.util.DLTexture;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
-import net.minecraft.resources.ResourceLocation;
+import de.mrjulsen.mcdragonlib.util.DLUtils;
 
 public enum ModGuiIcons {
     DELETE("delete", 1, 0),
@@ -92,7 +93,7 @@ public enum ModGuiIcons {
     private int v;
 
     public static final int ICON_SIZE = 16;
-    public static final ResourceLocation ICON_LOCATION = new ResourceLocation(BlockBeats.MOD_ID, "textures/gui/icons.png");;
+    public static final DLTexture ICONS = new DLTexture(DLUtils.resourceLocation(BlockBeats.MOD_ID, "textures/gui/icons.png"), 256, 256);
 
     ModGuiIcons(String id, int u, int v) {
         this.id = id;
@@ -124,11 +125,11 @@ public enum ModGuiIcons {
         return Arrays.stream(values()).filter(x -> x.getId().equals(id)).findFirst().orElse(ModGuiIcons.EMPTY);
     }
 
-    public void render(Graphics graphics, int x, int y) {
-        GuiUtils.drawTexture(ModGuiIcons.ICON_LOCATION, graphics, x, y, getU(), getV(), ICON_SIZE, ICON_SIZE);
+    public void render(DLGuiGraphics graphics, int x, int y) {
+        GuiUtils.drawTexture(ICONS, graphics, x, y, ICON_SIZE, ICON_SIZE, getU(), getV());
     }
 
-    public Sprite getAsSprite(int renderWidth, int renderHeight) {
-        return new Sprite(ICON_LOCATION, 256, 256, getU(), getV(), ICON_SIZE, ICON_SIZE, renderWidth, renderHeight);
+    public DLSprite getAsSprite(int renderWidth, int renderHeight) {
+        return new DLSprite(ICONS, renderWidth, renderHeight, getU(), getV(), ICON_SIZE, ICON_SIZE);
     }
 }

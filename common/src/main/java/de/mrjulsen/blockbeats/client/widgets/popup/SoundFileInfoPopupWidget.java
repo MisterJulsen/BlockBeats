@@ -1,9 +1,6 @@
 package de.mrjulsen.blockbeats.client.widgets.popup;
 
-import java.util.function.Consumer;
-
 import de.mrjulsen.blockbeats.BlockBeats;
-import de.mrjulsen.blockbeats.client.screen.DLPopupScreen;
 import de.mrjulsen.blockbeats.client.widgets.SoundFileInfoPanel;
 import de.mrjulsen.blockbeats.util.Utils;
 import de.mrjulsen.dragnsounds.DragNSounds;
@@ -11,55 +8,67 @@ import de.mrjulsen.dragnsounds.core.filesystem.SoundFile;
 import de.mrjulsen.dragnsounds.core.filesystem.SoundLocation;
 import de.mrjulsen.dragnsounds.events.ServerEvents;
 import de.mrjulsen.mcdragonlib.DragonLib;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLButton;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLVerticalScrollBar;
-import de.mrjulsen.mcdragonlib.client.render.DynamicGuiRenderer;
-import de.mrjulsen.mcdragonlib.client.render.DynamicGuiRenderer.AreaStyle;
-import de.mrjulsen.mcdragonlib.client.util.Graphics;
-import de.mrjulsen.mcdragonlib.client.util.GuiAreaDefinition;
+import de.mrjulsen.mcdragonlib.client.gui.events.DLGuiStandardEvents;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLWindowManager;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLButton;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLScrollBar;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLScrollBar.Orientation;
+import de.mrjulsen.mcdragonlib.client.render.DefaultGuiTextures;
+import de.mrjulsen.mcdragonlib.client.util.DLGuiGraphics;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
-import de.mrjulsen.mcdragonlib.core.EAlignment;
+import de.mrjulsen.mcdragonlib.data.ETextAlignment;
+import de.mrjulsen.mcdragonlib.util.TextUtils;
+import de.mrjulsen.mcdragonlib.util.math.Rectangle;
 import net.minecraft.Util;
 import net.minecraft.network.chat.MutableComponent;
 
-public class SoundFileInfoPopupWidget extends PopupWidget {
+public class SoundFileInfoPopupWidget extends PopupWindow {
 
     private final MutableComponent title = Utils.trans("sound_properties", "title");
     private final MutableComponent textShowFolder = Utils.trans("sound_properties", "show_folder");
-    private final GuiAreaDefinition definition;
+    private final Rectangle definition;
 
-    public SoundFileInfoPopupWidget(DLPopupScreen parent, int layer, SoundFile file, int width, int height, Consumer<PopupWidget> close) {
-        super(parent, layer, width, height, close);
-        definition = new GuiAreaDefinition(width / 2 - 94, height / 2 - 80 + 16, 180, 160 - 16 - 30);
-        DLButton closeBtn = addRenderableWidget(new DLButton(width / 2 + (DragNSounds.hasServer() ? 2 : -40), height / 2 + 53, 80, 20, DragonLib.TEXT_CLOSE, b -> close()));
-        closeBtn.setRenderStyle(AreaStyle.DRAGONLIB);
+    public SoundFileInfoPopupWidget(DLWindowManager manager, SoundFile file) {
+        super(manager, 200, 180);
+        definition = Rectangle.withSize(width() / 2 - 94, height() / 2 - 80 + 16, 180, 160 - 16 - 30);
+        
+        DLButton closeBtn = addComponent(new DLButton(width() / 2 + (DragNSounds.hasServer() ? 2 : -40), height() / 2 + 53, 80, 20));
+        closeBtn.text.set(TextUtils.TEXT_CLOSE);
+        closeBtn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+            getWindowManager().closeWindow(this);
+            return false;
+        });
+        
         if (DragNSounds.hasServer()) {
-            DLButton locationBtn = addRenderableWidget(new DLButton(width / 2 - 82, height / 2 + 53, 80, 20, textShowFolder, b -> {
+            DLButton locationBtn = addComponent(new DLButton(width() / 2 - 82, height() / 2 + 53, 80, 20));
+            locationBtn.text.set(textShowFolder);
+            locationBtn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
                 try {
                     file.getLocation().setLevel(ServerEvents.getCurrentServer().overworld());
                     Util.getPlatform().openFile(file.getLocation().resolve().orElse(SoundLocation.getModDirectory(ServerEvents.getCurrentServer().overworld())).toFile());
-                } catch (Exception e) {
-                    BlockBeats.LOGGER.error("Unable to open file location.", e);
+                } catch (Exception ex) {
+                    BlockBeats.LOGGER.error("Unable to open file location.", ex);
                 }
-                close();
-            }));
-            locationBtn.setRenderStyle(AreaStyle.DRAGONLIB);
+                getWindowManager().closeWindow(this);
+                return false;
+            });
         }
-        SoundFileInfoPanel container = addRenderableOnly(new SoundFileInfoPanel(file, definition.getX() + 1, definition.getY() + 1, definition.getWidth() - 1 - 8, definition.getHeight() - 2));
-        addRenderableWidget(new DLVerticalScrollBar(definition.getRight(), definition.getY(), 8, definition.getHeight(), null))
-            .setAutoScrollerSize(true)
-            .setScreenSize(container.getHeight())
-            .setStepSize(8)
-            .setMaxScroll(container.maxRequiredHeight() - container.getHeight())
-            .withOnValueChanged((scrollbar) -> container.setYScrollOffset(scrollbar.getScrollValue()))
-        ;
+        SoundFileInfoPanel container = addComponent(new SoundFileInfoPanel(file, (int)definition.x() + 1, (int)definition.y() + 1, (int)definition.width() - 1 - 8, (int)definition.height() - 2));
+
+        DLScrollBar scrollBar = addComponent(new DLScrollBar((int)definition.right(), (int)definition.y(), 8, (int)definition.height(), Orientation.VERTICAL));
+        scrollBar.scrollerSize.set(-1);
+        scrollBar.screenSize.set(container.height());
+        scrollBar.scrollSteps.set(15);
+        scrollBar.max.set(container.maxRequiredHeight());
+        scrollBar.addEventListener(DLScrollBar.ValueChangedEvent.class, (s, e) -> {
+            container.setScrollOffsetY(scrollBar.value.get().intValue());
+            return false;
+        });
     }
-    
+
     @Override
-    public void renderMainPopupLayer(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderMainPopupLayer(graphics, mouseX, mouseY, partialTicks);
-        DynamicGuiRenderer.renderWindow(graphics, width / 2 - 100, height / 2 - 80, 200, 160);
-        DynamicGuiRenderer.renderContainerBackground(graphics, definition);
-        GuiUtils.drawString(graphics, font, width / 2 - 94, height / 2 - 80 + 6, title, DragonLib.NATIVE_UI_FONT_COLOR, EAlignment.LEFT, false);
+    public void renderMainLayer(DLGuiGraphics graphics, double mouseX, double mouseY, Rectangle renderBounds) {
+        DefaultGuiTextures.DRAGONLIB_UI.getSprite(DefaultGuiTextures.SPRITE_NAME_WINDOW_ROUNDED).render(graphics, 0, 0, width(), height());
+        GuiUtils.drawString(graphics, graphics.defaultFont(), width() / 2 - 94, height() / 2 - 80 + 6, title, DragonLib.VANILLA_UI_FONT_COLOR, ETextAlignment.LEFT, false);
     }
 }

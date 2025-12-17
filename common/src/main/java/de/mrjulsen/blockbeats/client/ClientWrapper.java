@@ -7,10 +7,10 @@ import de.mrjulsen.blockbeats.BlockBeats;
 import de.mrjulsen.blockbeats.block.entity.SoundPlayerBlockEntity;
 import de.mrjulsen.blockbeats.client.screen.PlaylistScreen;
 import de.mrjulsen.dragnsounds.core.filesystem.SoundLocation;
-import de.mrjulsen.mcdragonlib.client.gui.DLScreen;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLListBox;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLListBox.DLListBoxItem;
-import de.mrjulsen.mcdragonlib.core.ITranslatableEnum;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLScreen;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLWindow;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLWindowManager;
+import de.mrjulsen.mcdragonlib.data.ITranslatableEnum;
 import de.mrjulsen.mcdragonlib.mixin.FontAccessor;
 import de.mrjulsen.mcdragonlib.util.TextUtils;
 import net.minecraft.ChatFormatting;
@@ -23,7 +23,7 @@ import net.minecraft.network.chat.Style;
 
 public class ClientWrapper {
     public static void openPlaylistScreen(SoundPlayerBlockEntity blockEntity) {
-        DLScreen.setScreen(new PlaylistScreen(blockEntity));
+        DLWindow.openWindow(mgr -> new PlaylistScreen(mgr, blockEntity));
     }
 
     public static SoundLocation myLocation(String category) {
@@ -35,7 +35,7 @@ public class ClientWrapper {
     }
 
 
-
+/*
     public static <T> int filterListBox(DLListBox<T> box, Predicate<DLListBoxItem<T>> filter) {
         int count = 0;
         for (DLListBoxItem<T> item : box.getItems()) {
@@ -50,6 +50,7 @@ public class ClientWrapper {
         box.getScrollBar().setMaxScroll(count * box.getItemHeight() + 2);
         return count;
     }
+        */
     
     public static MutableComponent textCutOff(MutableComponent text, int maxWidth) {
         MutableComponent dots = TextUtils.text("...");
@@ -66,11 +67,11 @@ public class ClientWrapper {
         List<FormattedText> c = new ArrayList<>();
         T enumValue = enumClass.getEnumConstants()[0];
         c.addAll(((FontAccessor) Minecraft.getInstance().font).dragonlib$getSplitter()
-                .splitLines(TextUtils.translate(enumValue.getEnumDescriptionTranslationKey(modid)), maxWidth, Style.EMPTY));
+                .splitLines(enumValue.getEnumTranslation(), maxWidth, Style.EMPTY));
         c.add(TextUtils.text(" "));
         for (T val : enumClass.getEnumConstants()) {
-            String seq1 = String.format("> %s", TextUtils.translate(val.getValueTranslationKey(modid)).getString());
-            String seq2 = TextUtils.translate(val.getValueInfoTranslationKey(modid)).getString();
+            String seq1 = String.format("> %s", val.getValueTranslation().getString());
+            String seq2 = val.getValueDescriptionTranslation().getString();
             c.addAll(((FontAccessor)Minecraft.getInstance().font).dragonlib$getSplitter().splitLines(seq1, maxWidth, Style.EMPTY.withBold(true).withColor(val == selected ? ChatFormatting.GOLD : ChatFormatting.WHITE)));
             c.addAll(((FontAccessor)Minecraft.getInstance().font).dragonlib$getSplitter().splitLines(seq2, maxWidth, Style.EMPTY.withColor(val == selected ? ChatFormatting.YELLOW : ChatFormatting.GRAY)));
         }

@@ -35,7 +35,7 @@ public class RadiusPlaybackAreaBuilder implements IPlaybackAreaBuilder {
 
     @Override
     public IPlaybackArea build(BlockPos pos) {
-        return new RadiusPlaybackArea(new Vec3(pos.getX() + 0.5f, pos.getY() + 0.5f, pos.getZ() + 0.5f), (radius + 0.5f) * (radius + 0.5f) + DragonLib.PIXEL);
+        return new RadiusPlaybackArea(new Vec3(pos.getX() + 0.5f, pos.getY() + 0.5f, pos.getZ() + 0.5f), (radius + 0.5f) * (radius + 0.5f) + DragonLib.BLOCK_PIXEL);
     }
     
 }

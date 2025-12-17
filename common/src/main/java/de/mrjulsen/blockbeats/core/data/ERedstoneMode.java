@@ -2,23 +2,24 @@ package de.mrjulsen.blockbeats.core.data;
 
 import java.util.Arrays;
 
+import de.mrjulsen.blockbeats.BlockBeats;
 import de.mrjulsen.blockbeats.client.ModGuiIcons;
 import de.mrjulsen.mcdragonlib.DragonLib;
-import de.mrjulsen.mcdragonlib.core.IIterableEnum;
-import de.mrjulsen.mcdragonlib.core.ITranslatableEnum;
-import net.minecraft.util.StringRepresentable;
+import de.mrjulsen.mcdragonlib.data.IIterableEnum;
+import de.mrjulsen.mcdragonlib.data.ITranslatableEnum;
+import de.mrjulsen.mcdragonlib.util.DLColor;
 
-public enum ERedstoneMode implements ITranslatableEnum, StringRepresentable, IIterableEnum<ERedstoneMode> {
-    NO_REDSTONE(0, "no_redstone", ModGuiIcons.NO_REDSTONE, DragonLib.DEFAULT_BUTTON_COLOR),
-    REDSTONE(1, "redstone", ModGuiIcons.REDSTONE, DragonLib.ERROR_BUTTON_COLOR),
-    REDSTONE_IMPLUSE(2, "redstone_impulse", ModGuiIcons.REDSTONE_IMPULSE, DragonLib.ERROR_BUTTON_COLOR);
+public enum ERedstoneMode implements ITranslatableEnum, IIterableEnum<ERedstoneMode> {
+    NO_REDSTONE(0, "no_redstone", ModGuiIcons.NO_REDSTONE, DragonLib.BUTTON_COLOR_DEFAULT_DARK),
+    REDSTONE(1, "redstone", ModGuiIcons.REDSTONE, DragonLib.BUTTON_COLOR_CANCEL),
+    REDSTONE_IMPLUSE(2, "redstone_impulse", ModGuiIcons.REDSTONE_IMPULSE, DragonLib.BUTTON_COLOR_CANCEL);
 
     private int index;
     private String name;
     private ModGuiIcons icon;
-    private int color;
+    private DLColor color;
 
-    private ERedstoneMode(int index, String name, ModGuiIcons icon, int color) {
+    private ERedstoneMode(int index, String name, ModGuiIcons icon, DLColor color) {
         this.index = index;
         this.name = name;
         this.icon = icon;
@@ -37,7 +38,7 @@ public enum ERedstoneMode implements ITranslatableEnum, StringRepresentable, IIt
         return icon;
     }
 
-    public int getButtonColor() {
+    public DLColor getButtonColor() {
         return color;
     }
 
@@ -46,23 +47,13 @@ public enum ERedstoneMode implements ITranslatableEnum, StringRepresentable, IIt
     }
 
     @Override
-    public String getSerializedName() {
-        return getName();
-    }
-
-    @Override
-    public String getEnumName() {
-        return "redstone_mode";
-    }
-
-    @Override
-    public String getEnumValueName() {
-        return getName();
-    }
-
-    @Override
     public ERedstoneMode[] getValues() {
         return values();
+    }
+
+    @Override
+    public Data getTranslationData() {
+        return new Data(BlockBeats.MOD_ID, "redstone_mode", name);
     }
     
 }

@@ -1,28 +1,27 @@
 package de.mrjulsen.blockbeats.client.widgets.popup;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.function.Consumer;
-
-import de.mrjulsen.blockbeats.client.screen.DLPopupScreen;
+import java.util.List;
 import de.mrjulsen.blockbeats.client.widgets.PlayerShareSelector;
 import de.mrjulsen.blockbeats.util.Utils;
 import de.mrjulsen.dragnsounds.core.filesystem.SoundFile;
 import de.mrjulsen.mcdragonlib.DragonLib;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLButton;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLEditBox;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLTooltip;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLVerticalScrollBar;
-import de.mrjulsen.mcdragonlib.client.render.DynamicGuiRenderer;
-import de.mrjulsen.mcdragonlib.client.render.DynamicGuiRenderer.AreaStyle;
-import de.mrjulsen.mcdragonlib.client.util.Graphics;
-import de.mrjulsen.mcdragonlib.client.util.GuiAreaDefinition;
+import de.mrjulsen.mcdragonlib.client.gui.events.DLGuiStandardEvents;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLWindowManager;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLButton;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLRichTextEditBox;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLRichTextLabel;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLScrollBar;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLTooltip;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.components.DLScrollBar.Orientation;
+import de.mrjulsen.mcdragonlib.client.render.DefaultGuiTextures;
+import de.mrjulsen.mcdragonlib.client.util.DLGuiGraphics;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
-import de.mrjulsen.mcdragonlib.core.EAlignment;
+import de.mrjulsen.mcdragonlib.data.ETextAlignment;
 import de.mrjulsen.mcdragonlib.util.TextUtils;
+import de.mrjulsen.mcdragonlib.util.math.Rectangle;
 import net.minecraft.network.chat.MutableComponent;
 
-public class SharePopup extends PopupWidget {
+public class SharePopup extends PopupWindow {
 
     private final MutableComponent title = Utils.trans("share", "title");
     private final MutableComponent textStopShare = Utils.trans("share", "stop_share");
@@ -30,64 +29,55 @@ public class SharePopup extends PopupWidget {
 
     private static final int WIN_WIDTH = 200;
     private static final int WIN_HEIGHT = 220;
-    private int guiLeft, guiTop;
 
     private DLButton cancelButton;
     private DLButton stopShareBtn;
-    private DLVerticalScrollBar scrollBar;
-    private final Collection<DLTooltip> tooltips = new ArrayList<>();
+    private DLScrollBar scrollBar;
 
-    private final GuiAreaDefinition definition;
+    private final Rectangle definition;
 
-    public SharePopup(DLPopupScreen parent, int layer, int width, int height, SoundFile file, Consumer<PopupWidget> close) {
-        super(parent, layer, width, height, close);
-        guiLeft = width / 2 - WIN_WIDTH / 2;
-        guiTop = height / 2 - WIN_HEIGHT / 2;
-        this.definition = new GuiAreaDefinition(guiLeft + 6, guiTop + 40, WIN_WIDTH - 20, WIN_HEIGHT - 85);
+    public SharePopup(DLWindowManager manager, SoundFile file) {
+        super(manager, WIN_WIDTH, WIN_HEIGHT);
         
-        PlayerShareSelector container = addRenderableWidget(new PlayerShareSelector(parent, definition.getX() + 1, definition.getY() + 1, definition.getWidth() - 2, definition.getHeight(), file, this::getScrollBar));
-        container.setWidgetLayerIndex(this.getWidgetLayerIndex());
+        this.definition = Rectangle.withSize(6, 40, WIN_WIDTH - 20, WIN_HEIGHT - 85);
+        
+        PlayerShareSelector container = addComponent(new PlayerShareSelector((int)definition.x() + 1, (int)definition.y() + 1, (int)definition.width() - 2, (int)definition.height(), file, () -> scrollBar));
 
-        DLEditBox searchBox = addRenderableWidget(new DLEditBox(font, definition.getX() + 1, definition.getY() - 19, definition.getWidth() - 2 + 8, 18, TextUtils.empty()));
-        searchBox.setResponder((value) -> {
-            container.refresh(value);
+        DLRichTextEditBox searchBox = addComponent(new DLRichTextEditBox((int)definition.x() + 1, (int)definition.y() - 19, (int)definition.width() - 2 + 8, 18));
+        searchBox.placeholderText.set(TextUtils.TEXT_SEARCH);
+        searchBox.addEventListener(DLRichTextLabel.TextChangedEvent.class, (s, e) -> {
+            container.refresh(e.text().getPlainText());
+            return false;
         });
-        searchBox.withHint(DragonLib.TEXT_SEARCH);
 
-        cancelButton = addRenderableWidget(new DLButton(guiLeft + WIN_WIDTH - 80 - 6, guiTop + WIN_HEIGHT - 30, 80, 20, DragonLib.TEXT_CLOSE, (btn) -> close()));
-        cancelButton.setRenderStyle(AreaStyle.DRAGONLIB);
-        stopShareBtn = addRenderableWidget(new DLButton(guiLeft + 6, guiTop + WIN_HEIGHT - 30, WIN_WIDTH - 80 - 16, 20, textStopShare,
-        (btn) -> {
+        cancelButton = addComponent(new DLButton(WIN_WIDTH - 80 - 6, WIN_HEIGHT - 30, 80, 20));
+        cancelButton.text.set(TextUtils.TEXT_CLOSE);
+        cancelButton.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
+            getWindowManager().closeWindow(this);
+            return false;
+        });
+        
+        stopShareBtn = addComponent(new DLButton(6, WIN_HEIGHT - 30, WIN_WIDTH - 80 - 16, 20));
+        stopShareBtn.text.set(textStopShare);
+        stopShareBtn.tooltip.set(new DLTooltip(List.of(descriptionStopShare), 200));
+        stopShareBtn.addEventListener(DLGuiStandardEvents.ClickEvent.class, (s, e) -> {
             container.reload("");
-        }));
-        stopShareBtn.setRenderStyle(AreaStyle.DRAGONLIB);
-        stopShareBtn.setBackColor(DragonLib.ERROR_BUTTON_COLOR);
-        tooltips.add(DLTooltip.of(descriptionStopShare).assignedTo(stopShareBtn).withMaxWidth(width / 4));
+            return false;
+        });
 
-        scrollBar = addRenderableWidget(new DLVerticalScrollBar(definition.getRight(), definition.getY(), 8, definition.getHeight(), definition))
-            .setAutoScrollerSize(true)
-            .setScreenSize(container.getHeight())
-            .setStepSize(15)
-            .setMaxScroll(container.maxRequiredHeight())
-            .withOnValueChanged((scrollbar) -> container.setYScrollOffset(scrollbar.getScrollValue()))
-        ;
-    }
-
-    private DLVerticalScrollBar getScrollBar() {
-        return scrollBar;
-    }
-    
-    @Override
-    public void renderMainPopupLayer(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderMainPopupLayer(graphics, mouseX, mouseY, partialTicks);
-        DynamicGuiRenderer.renderWindow(graphics, guiLeft, guiTop, WIN_WIDTH, WIN_HEIGHT);
-        DynamicGuiRenderer.renderContainerBackground(graphics, definition);
-        GuiUtils.drawString(graphics, font, guiLeft + 6, guiTop + 6, title, DragonLib.NATIVE_UI_FONT_COLOR, EAlignment.LEFT, false);
+        scrollBar = addComponent(new DLScrollBar((int)definition.right(), (int)definition.y(), 8, (int)definition.height(), Orientation.VERTICAL));
+        scrollBar.scrollerSize.set(-1);
+        scrollBar.screenSize.set(container.height());
+        scrollBar.scrollSteps.set(15);
+        scrollBar.addEventListener(DLScrollBar.ValueChangedEvent.class, (s, e) -> {
+            container.setScrollOffsetY(scrollBar.value.get().intValue());
+            return false;
+        });        
     }
 
     @Override
-    public void renderFrontLayer(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderFrontLayer(graphics, mouseX, mouseY, partialTicks);
-        tooltips.forEach(x -> x.render(getParent(), graphics, mouseX, mouseY));
+    public void renderMainLayer(DLGuiGraphics graphics, double mouseX, double mouseY, Rectangle renderBounds) {
+        DefaultGuiTextures.DRAGONLIB_UI.getSprite(DefaultGuiTextures.SPRITE_NAME_WINDOW_ROUNDED).render(graphics, 0, 0, width(), height());
+        GuiUtils.drawString(graphics, graphics.defaultFont(), 6, 6, title, DragonLib.VANILLA_UI_FONT_COLOR, ETextAlignment.LEFT, false);
     }
 }

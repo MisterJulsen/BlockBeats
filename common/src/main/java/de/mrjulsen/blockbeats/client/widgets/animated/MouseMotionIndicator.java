@@ -3,15 +3,11 @@ package de.mrjulsen.blockbeats.client.widgets.animated;
 import org.lwjgl.glfw.GLFW;
 
 import de.mrjulsen.blockbeats.client.ModGuiIcons;
-import de.mrjulsen.mcdragonlib.client.ITickable;
-import de.mrjulsen.mcdragonlib.client.util.Graphics;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Renderable;
-import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.narration.NarratableEntry;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLGuiComponent;
+import de.mrjulsen.mcdragonlib.client.util.DLGuiGraphics;
+import de.mrjulsen.mcdragonlib.util.math.Rectangle;
 
-public class MouseMotionIndicator implements Renderable, ITickable, GuiEventListener, NarratableEntry {
+public class MouseMotionIndicator extends DLGuiComponent {
     
     private static final int MAX_SPRITES = 4;
     private static final int TICK_SPEED = 15;
@@ -30,8 +26,7 @@ public class MouseMotionIndicator implements Renderable, ITickable, GuiEventList
     private final boolean hold;
     
     public MouseMotionIndicator(int x, int y, int size, int button, boolean showWaves, boolean hold) {
-        this.x = x;
-        this.y = y;
+        super(x, y, size, button);
         this.size = size;
         this.button = button;
         this.showWaves = showWaves;
@@ -40,6 +35,7 @@ public class MouseMotionIndicator implements Renderable, ITickable, GuiEventList
 
     @Override
     public void tick() {
+        super.tick();
         angle += 6;
         if (angle > 360) {
             angle = 0;
@@ -57,8 +53,7 @@ public class MouseMotionIndicator implements Renderable, ITickable, GuiEventList
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        Graphics graphics = new Graphics(guiGraphics, guiGraphics.pose());
+    public void renderMainLayer(DLGuiGraphics graphics, double mouseX, double mouseY, Rectangle renderBounds) {
         if (showWaves) {
             switch (spriteIndex) {
                 case 0 -> {
@@ -91,54 +86,4 @@ public class MouseMotionIndicator implements Renderable, ITickable, GuiEventList
         }
         icon.getAsSprite(size, size).render(graphics, (int)(x + size * (showWaves ? 1.5F : 0.5f) + offsetX), y);
     }
-    
-
-    public int getX() {
-        return x;
-    }
-
-    public int getY() {
-        return y;
-    }
-
-    public int getSize() {
-        return size;
-    }
-
-    public void setX(int x) {
-        this.x = x;
-    }
-
-    public void setY(int y) {
-        this.y = y;
-    }
-
-    public void setSize(int size) {
-        this.size = size;
-    }
-
-    public int getWidgetHeight() {
-        return size;
-    }
-
-    public int getWidgetWidth() {
-        return showWaves ? size * 4 : size * 2;
-    }
-
-    @Override
-    public void updateNarration(NarrationElementOutput narrationElementOutput) {
-    }
-
-    @Override
-    public NarrationPriority narrationPriority() {
-        return NarrationPriority.NONE;
-    }
-
-    @Override
-    public boolean isFocused() {
-        return false;
-    }
-
-    @Override
-    public void setFocused(boolean focused) {}
 }

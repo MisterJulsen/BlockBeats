@@ -3,17 +3,18 @@ package de.mrjulsen.blockbeats.client.widgets;
 import de.mrjulsen.blockbeats.util.Utils;
 import de.mrjulsen.dragnsounds.core.filesystem.SoundFile;
 import de.mrjulsen.mcdragonlib.DragonLib;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLScrollableWidgetContainer;
-import de.mrjulsen.mcdragonlib.client.util.Graphics;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLGuiComponent;
+import de.mrjulsen.mcdragonlib.client.render.DefaultGuiTextures;
+import de.mrjulsen.mcdragonlib.client.util.DLGuiGraphics;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
-import de.mrjulsen.mcdragonlib.core.EAlignment;
+import de.mrjulsen.mcdragonlib.data.ETextAlignment;
 import de.mrjulsen.mcdragonlib.util.IOUtils;
 import de.mrjulsen.mcdragonlib.util.TextUtils;
+import de.mrjulsen.mcdragonlib.util.math.Rectangle;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.MutableComponent;
 
-public class SoundFileInfoPanel extends DLScrollableWidgetContainer {
+public class SoundFileInfoPanel extends DLGuiComponent {
 
     private static final int LINE_HEIGHT = 12;
 
@@ -46,14 +47,16 @@ public class SoundFileInfoPanel extends DLScrollableWidgetContainer {
     }
 
     @Override
-    public void renderMainLayerScrolled(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderMainLayerScrolled(graphics, mouseX, mouseY, partialTicks);
+    public void renderMainLayer(DLGuiGraphics graphics, double mouseX, double mouseY, Rectangle renderBounds) {
+        DefaultGuiTextures.DRAGONLIB_UI.getSprite("container").render(graphics, 0, 0, width(), height());
+
         lineY = 0;
         graphics.poseStack().pushPose();
         float scale = 0.75f;
         graphics.poseStack().scale(scale, scale, 1);
-        final int x = (int)(getX() / scale);
-        final int y = (int)(getY() / scale);
+        graphics.poseStack().translate(0, -getScrollOffsetY(), 0);
+        final int x = 0;
+        final int y = 0;
 
         drawInfo(graphics, x, y, scale, textDisplayName, file.getDisplayName());
         drawInfo(graphics, x, y, scale, textTitle, file.getInfo().getOriginalTitle());
@@ -79,35 +82,21 @@ public class SoundFileInfoPanel extends DLScrollableWidgetContainer {
         graphics.poseStack().popPose();
     }
 
-    private void drawHeadline(Graphics graphics, int lx, int ly, float scale, MutableComponent key) {
+    private void drawHeadline(DLGuiGraphics graphics, int lx, int ly, float scale, MutableComponent key) {
         lineY += LINE_HEIGHT;
-        GuiUtils.drawString(graphics, font, lx + 8, ly + 8 + (int)(lineY), key.withStyle(ChatFormatting.BOLD), DragonLib.NATIVE_BUTTON_FONT_COLOR_ACTIVE, EAlignment.LEFT, false);
-        lineY += LINE_HEIGHT;
-    }
-
-    private void drawInfo(Graphics graphics, int lx, int ly, float scale, MutableComponent key, String value) {
-        GuiUtils.drawString(graphics, font, lx + 12, ly + 8 + (int)(lineY), key, DragonLib.NATIVE_BUTTON_FONT_COLOR_ACTIVE, EAlignment.LEFT, false);
-        lineY += LINE_HEIGHT;
-        GuiUtils.drawString(graphics, font, lx + 16, ly + 8 + (int)(lineY), TextUtils.text(value).withStyle(ChatFormatting.ITALIC), DragonLib.NATIVE_BUTTON_FONT_COLOR_DISABLED, EAlignment.LEFT, false);
+        GuiUtils.drawString(graphics, graphics.defaultFont(), lx + 8, ly + 8 + (int)(lineY), key.withStyle(ChatFormatting.BOLD), DragonLib.VANILLA_BUTTON_ACTIVE_FONT_COLOR, ETextAlignment.LEFT, false);
         lineY += LINE_HEIGHT;
     }
 
-    @Override
-    public NarrationPriority narrationPriority() {
-        return NarrationPriority.NONE;
-    }
-
-    @Override
-    public void updateNarration(NarrationElementOutput var1) {
+    private void drawInfo(DLGuiGraphics graphics, int lx, int ly, float scale, MutableComponent key, String value) {
+        GuiUtils.drawString(graphics, graphics.defaultFont(), lx + 12, ly + 8 + (int)(lineY), key, DragonLib.VANILLA_BUTTON_ACTIVE_FONT_COLOR, ETextAlignment.LEFT, false);
+        lineY += LINE_HEIGHT;
+        GuiUtils.drawString(graphics, graphics.defaultFont(), lx + 16, ly + 8 + (int)(lineY), TextUtils.text(value).withStyle(ChatFormatting.ITALIC), DragonLib.VANILLA_BUTTON_ACTIVE_FONT_COLOR, ETextAlignment.LEFT, false);
+        lineY += LINE_HEIGHT;
     }
 
     public int maxRequiredHeight() {
         return LINE_HEIGHT * 2 * (LINES + file.getMetadata().size()) + 16;
-    }
-
-    @Override
-    public boolean consumeScrolling(double mouseX, double mouseY) {
-        return isMouseOver(mouseX, mouseY);
     }
     
 }
