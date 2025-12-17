@@ -32,6 +32,7 @@ import de.mrjulsen.mcdragonlib.client.util.DLGuiGraphics;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
 import de.mrjulsen.mcdragonlib.data.ETextAlignment;
 import de.mrjulsen.mcdragonlib.util.IOUtils;
+import de.mrjulsen.mcdragonlib.util.TextUtils;
 import de.mrjulsen.mcdragonlib.util.Holder.MutableHolder;
 import de.mrjulsen.mcdragonlib.util.math.Rectangle;
 import net.minecraft.network.chat.CommonComponents;
@@ -110,6 +111,7 @@ public class UploadSoundPopup extends PopupWindow {
         channelsBtn.items.addAll(EChannels.values());
         channelsBtn.selectedItem.set(Optional.ofNullable(channels));
         channelsBtn.tooltip.set(new DLTooltip(GuiUtils.getEnumTooltipData(EChannels.class, 200), 200));
+        channelsBtn.textFormat.set((src) -> TextUtils.text(src.text.get().getString()).append(": ").append(src.selectedItem.get().map(x -> x.getValueTranslation()).orElse(TextUtils.empty())).withStyle(src.text.get().getStyle()));
         channelsBtn.addEventListener(DLCycleButton.SelectedItemChanged.class, (a, e) -> {
             channelsBtn.selectedItem.get().ifPresent(v -> channels = v);
             return false;
@@ -121,6 +123,7 @@ public class UploadSoundPopup extends PopupWindow {
         visibilityBtn.items.addAll(ESoundVisibility.values());
         visibilityBtn.selectedItem.set(Optional.ofNullable(visibility));
         visibilityBtn.tooltip.set(new DLTooltip(GuiUtils.getEnumTooltipData(ESoundVisibility.class, 200), 200));
+        visibilityBtn.textFormat.set((src) -> TextUtils.text(src.text.get().getString()).append(": ").append(src.selectedItem.get().map(x -> x.getValueTranslation()).orElse(TextUtils.empty())).withStyle(src.text.get().getStyle()));
         visibilityBtn.addEventListener(DLCycleButton.SelectedItemChanged.class, (s, e) -> {
             visibilityBtn.selectedItem.get().ifPresent(v -> visibility = v);
             return false;
@@ -153,6 +156,7 @@ public class UploadSoundPopup extends PopupWindow {
             qualityInput = addComponent(new DLSlider(10, dy, WIN_WIDTH - 20, 20));
             qualityInput.text.set(textQuality);
             qualityInput.max.set(10D);
+            qualityInput.value.set(5D);
         }
 
 

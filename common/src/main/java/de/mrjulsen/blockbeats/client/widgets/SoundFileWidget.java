@@ -209,7 +209,7 @@ public class SoundFileWidget extends DLButton {
     public void renderMainLayer(DLGuiGraphics graphics, double mouseX, double mouseY, Rectangle renderBounds) {
         final float scale = 0.75f;
         int textRight = isSelected() ? width() - 20 * buttonsPanel.componentsCount() - 10 : width() - 10;
-        String timeString = DLTime.fromReal(0, 0, 0, (int)file.getInfo().getDuration(), 0, VanillaTimeSystem.INSTANCE).format(new TimeFormatDigitalDuration(), TimeContext.REAL);
+        String timeString = DLTime.fromReal(0, 0, 0, 0, (int)file.getInfo().getDuration(), VanillaTimeSystem.INSTANCE).format(new TimeFormatDigitalDuration(), TimeContext.REAL);
         String sizeString = IOUtils.formatBytes(file.getInfo().getSize());
         String nameString = String.format("%s (%s)", parentContainer.getUsername(file.getInfo().getOwnerId()), ESoundVisibility.getByName(file.getMetadataSafe(BlockBeats.META_VISIBILITY)).getValueTranslation().getString());
 

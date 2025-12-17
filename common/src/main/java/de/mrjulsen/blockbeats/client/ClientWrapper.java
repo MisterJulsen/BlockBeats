@@ -2,14 +2,11 @@ package de.mrjulsen.blockbeats.client;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
 import de.mrjulsen.blockbeats.BlockBeats;
 import de.mrjulsen.blockbeats.block.entity.SoundPlayerBlockEntity;
 import de.mrjulsen.blockbeats.client.screen.PlaylistScreen;
 import de.mrjulsen.dragnsounds.core.filesystem.SoundLocation;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLScreen;
 import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLWindow;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLWindowManager;
 import de.mrjulsen.mcdragonlib.data.ITranslatableEnum;
 import de.mrjulsen.mcdragonlib.mixin.FontAccessor;
 import de.mrjulsen.mcdragonlib.util.TextUtils;
@@ -67,7 +64,7 @@ public class ClientWrapper {
         List<FormattedText> c = new ArrayList<>();
         T enumValue = enumClass.getEnumConstants()[0];
         c.addAll(((FontAccessor) Minecraft.getInstance().font).dragonlib$getSplitter()
-                .splitLines(enumValue.getEnumTranslation(), maxWidth, Style.EMPTY));
+                .splitLines(enumValue.getEnumDescriptionTranslation(), maxWidth, Style.EMPTY));
         c.add(TextUtils.text(" "));
         for (T val : enumClass.getEnumConstants()) {
             String seq1 = String.format("> %s", val.getValueTranslation().getString());
