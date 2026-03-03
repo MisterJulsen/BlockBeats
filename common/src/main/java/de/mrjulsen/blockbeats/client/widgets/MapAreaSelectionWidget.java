@@ -12,23 +12,25 @@ import de.mrjulsen.blockbeats.BlockBeats;
 import de.mrjulsen.blockbeats.client.ModGuiIcons;
 import de.mrjulsen.blockbeats.client.widgets.animated.MouseMotionIndicator;
 import de.mrjulsen.blockbeats.util.Utils;
-import de.mrjulsen.mcdragonlib.client.gui.DLScreen;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.DLWidgetContainer;
+import de.mrjulsen.mcdragonlib.client.gui.events.DLGuiStandardEvents;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLGuiComponent;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.base.DLWindowManager;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.util.CursorType;
 import de.mrjulsen.mcdragonlib.client.render.MapImage;
-import de.mrjulsen.mcdragonlib.client.util.Graphics;
-import de.mrjulsen.mcdragonlib.client.util.GuiAreaDefinition;
+import de.mrjulsen.mcdragonlib.client.util.DLGuiGraphics;
 import de.mrjulsen.mcdragonlib.client.util.GuiUtils;
-import de.mrjulsen.mcdragonlib.core.EAlignment;
-import de.mrjulsen.mcdragonlib.util.MathUtils;
+import de.mrjulsen.mcdragonlib.data.ETextAlignment;
+import de.mrjulsen.mcdragonlib.util.DLColor;
 import de.mrjulsen.mcdragonlib.util.TextUtils;
+import de.mrjulsen.mcdragonlib.util.math.MathUtils;
+import de.mrjulsen.mcdragonlib.util.math.Rectangle;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.phys.Vec2;
 
-public class MapAreaSelectionWidget extends DLWidgetContainer {
+public class MapAreaSelectionWidget extends DLGuiComponent {
 
     private final MutableComponent textDrag = Utils.trans("map", "drag_select");
     private final MutableComponent textSelect = Utils.trans("map", "select");
@@ -65,21 +67,61 @@ public class MapAreaSelectionWidget extends DLWidgetContainer {
     private int dispX2 = -1;
     private int dispY2 = -1;
 
-    private final DLScreen parent;
-
-    public MapAreaSelectionWidget(DLScreen parent, int x, int y, int width, int height, BlockPos center, int mapWidth, int mapHeight, BiConsumer<Vec2, Vec2> onSelected) {
+    public MapAreaSelectionWidget(int x, int y, int width, int height, BlockPos center, int mapWidth, int mapHeight, BiConsumer<Vec2, Vec2> onSelected) {
         super(x, y, width, height);
-        this.parent = parent;
+        this.cursor.set(CursorType.CROSSHAIR);
         this.map = new MapImage(Minecraft.getInstance().level, center, center.getY(), mapWidth, mapHeight, false, 4);
         this.onSelected = onSelected;
         this.mapWidth = mapWidth;
         this.mapHeight = mapHeight;
         
-        mapDragIndicator = addWidget(new MouseMotionIndicator(getX() + 5, getY() + 5, 16, GLFW.GLFW_MOUSE_BUTTON_LEFT, false, true));
-        mapSelectIndicator = addWidget(new MouseMotionIndicator(getX() + 5, getY() + 5, 16, GLFW.GLFW_MOUSE_BUTTON_LEFT, false, true));
+        mapDragIndicator = addComponent(new MouseMotionIndicator(5, 5, 16, GLFW.GLFW_MOUSE_BUTTON_LEFT, false, true));
+        mapSelectIndicator = addComponent(new MouseMotionIndicator(5, 5, 16, GLFW.GLFW_MOUSE_BUTTON_LEFT, false, true));
 
         setArea(0, 0, 0, 0);
         centerViewToPoint(map.getCenterPosOnMap().x, map.getCenterPosOnMap().y);
+
+        addEventListener(DLGuiStandardEvents.MouseDownEvent.class, (s, e) -> {
+            if (DLWindowManager.hasShiftDown() && e.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                isSelecting = true;
+                selX1 = mouseXMapCoord(e.mouseX());
+                selY1 = mouseYMapCoord(e.mouseY());
+                selX2 = selX1;
+                selY2 = selY1;
+            }
+            return false;
+        });
+
+        addEventListener(DLGuiStandardEvents.DragEvent.class, (s, e) -> {
+            if (DLWindowManager.hasShiftDown() && e.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                selX2 = mouseXMapCoord(e.mouseX());
+                selY2 = mouseYMapCoord(e.mouseY());
+            } else if (e.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                setViewTo(mapX + e.dragX(), mapY + e.dragY());
+            }
+
+            return false;
+        });
+
+        addEventListener(DLGuiStandardEvents.KeyReleaseEvent.class, (s, e) -> {            
+            if (!DLWindowManager.hasShiftDown()) {
+                finishSelection(false);
+            }
+            return false;
+        });
+
+        addEventListener(DLGuiStandardEvents.MouseReleaseEvent.class, (s, e) -> {
+            finishSelection(true);
+            return false;
+        });
+
+        addEventListener(DLGuiStandardEvents.ScrollEvent.class, (s, e) -> {
+            int coordX = mouseXMapCoord(width() / 2);
+            int coordY = mouseYMapCoord(height() / 2);
+            this.map.setScale(MathUtils.clamp((int)(map.getScale() - e.deltaY()), 1, 8));
+            centerViewToPoint(coordX, coordY);
+            return false;
+        });
     }
     
     public int getMapWidth() {
@@ -114,17 +156,15 @@ public class MapAreaSelectionWidget extends DLWidgetContainer {
     }
 
     @Override
-    public void renderMainLayer(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
-        GuiUtils.enableScissor(graphics, getX(), getY(), getWidth(), getHeight());
-        super.renderMainLayer(graphics, mouseX, mouseY, partialTicks);
-        this.map.render(graphics, (int)(getX() + mapX), (int)(getY() + mapY));
+    public void renderMainLayer(DLGuiGraphics graphics, double mouseX, double mouseY, Rectangle renderBounds) {
+        this.map.render(graphics, (int)(mapX), (int)(mapY));
 
         // Draw area
         int x1 = Math.min(areaX1, areaX2);
         int y1 = Math.min(areaY1, areaY2);
         int x2 = Math.max(areaX1, areaX2);
         int y2 = Math.max(areaY1, areaY2);
-        GuiUtils.drawBox(graphics, new GuiAreaDefinition(mapXToAbs(x1), mapYToAbs(y1), (x2 - x1 + 1) * map.getScale(), (y2 - y1 + 1) * map.getScale()), 0x44FF0000, 0xFFFF0000);
+        GuiUtils.drawBox(graphics, mapXToAbs(x1), mapYToAbs(y1), (x2 - x1 + 1) * map.getScale(), (y2 - y1 + 1) * map.getScale(), DLColor.fromInt(0x44FF0000), DLColor.fromInt(0xFFFF0000));
 
         // Draw selection
         if (selX1 > -1 && selY1 > -1) {
@@ -132,43 +172,40 @@ public class MapAreaSelectionWidget extends DLWidgetContainer {
             dispY1 = Math.min(selY1, selY2);
             dispX2 = Math.max(selX1, selX2);
             dispY2 = Math.max(selY1, selY2);
-            GuiUtils.fill(graphics, mapXToAbs(dispX1), mapYToAbs(dispY1), (dispX2 - dispX1 + 1) * map.getScale(), (dispY2 - dispY1 + 1) * map.getScale(), 0x88FF0000);            
+            GuiUtils.fill(graphics, mapXToAbs(dispX1), mapYToAbs(dispY1), (dispX2 - dispX1 + 1) * map.getScale(), (dispY2 - dispY1 + 1) * map.getScale(), DLColor.fromInt(0x88FF0000));            
         }
-        if (isMouseSelected()) {
-            GuiUtils.drawBox(graphics, new GuiAreaDefinition(mouseXToMap(mouseX), mouseYToMap(mouseY), map.getScale(), map.getScale()), 0x44FF0000, 0xFFFF0000);
+        if (isSelected()) {
+            GuiUtils.drawBox(graphics, mouseXToMap(mouseX), mouseYToMap(mouseY), map.getScale(), map.getScale(), DLColor.fromInt(0x44FF0000), DLColor.fromInt(0xFFFF0000));
         }
         
-        if (DLScreen.hasShiftDown()) {
-            mapSelectIndicator.render(graphics.graphics(), mouseX, mouseY, partialTicks);
-            ModGuiIcons.SHIFT_KEY.getAsSprite(16, 16).render(graphics,  mapSelectIndicator.getX() + 8, mapSelectIndicator.getY() + 16);
-            GuiUtils.drawString(graphics, font, mapSelectIndicator.getX() + mapSelectIndicator.getWidgetWidth(), mapSelectIndicator.getY() + mapSelectIndicator.getWidgetHeight() / 2 - font.lineHeight / 2, textDrag, 0xFFFFFFFF, EAlignment.LEFT, true);
-            GuiUtils.drawString(graphics, font, mapSelectIndicator.getX() + mapSelectIndicator.getWidgetWidth(), 16 + mapSelectIndicator.getY() + mapSelectIndicator.getWidgetHeight() / 2 - font.lineHeight / 2, textCancel, 0xFFFFFFFF, EAlignment.LEFT, true);
+        if (DLWindowManager.hasShiftDown()) {
+            //mapSelectIndicator.render(graphics.graphics(), mouseX, mouseY, partialTicks);
+            ModGuiIcons.SHIFT_KEY.getAsSprite(16, 16).render(graphics, mapSelectIndicator.x() + 8, mapSelectIndicator.y() + 16);
+            GuiUtils.drawString(graphics, graphics.defaultFont(), mapSelectIndicator.x() + mapSelectIndicator.width() + 20, mapSelectIndicator.y() + mapSelectIndicator.height() / 2 - graphics.defaultFont().lineHeight / 2, textDrag, DLColor.WHITE, ETextAlignment.LEFT, true);
+            GuiUtils.drawString(graphics, graphics.defaultFont(), mapSelectIndicator.x() + mapSelectIndicator.width() + 20, 16 + mapSelectIndicator.y() + mapSelectIndicator.height() / 2 - graphics.defaultFont().lineHeight / 2, textCancel, DLColor.WHITE, ETextAlignment.LEFT, true);
         } else {
-            mapDragIndicator.render(graphics.graphics(), mouseX, mouseY, partialTicks);
-            ModGuiIcons.SHIFT_KEY.getAsSprite(16, 16).render(graphics, mapDragIndicator.getX(), mapDragIndicator.getY() + 16);
-            ModGuiIcons.MOUSE_LEFT.getAsSprite(16, 16).render(graphics, mapDragIndicator.getX() + 16, mapDragIndicator.getY() + 16);
-            ModGuiIcons.MOUSE_MIDDLE.getAsSprite(16, 16).render(graphics, mapDragIndicator.getX() + 8, mapDragIndicator.getY() + 32);
-            GuiUtils.drawString(graphics, font, mapDragIndicator.getX() + mapDragIndicator.getWidgetWidth(), mapDragIndicator.getY() + mapDragIndicator.getWidgetHeight() / 2 - font.lineHeight / 2, textMove, 0xFFFFFFFF, EAlignment.LEFT, true);
-            GuiUtils.drawString(graphics, font, mapDragIndicator.getX() + mapDragIndicator.getWidgetWidth(), 16 + mapDragIndicator.getY() + mapDragIndicator.getWidgetHeight() / 2 - font.lineHeight / 2, textSelect, 0xFFFFFFFF, EAlignment.LEFT, true);
-            GuiUtils.drawString(graphics, font, mapDragIndicator.getX() + mapDragIndicator.getWidgetWidth(), 32 + mapDragIndicator.getY() + mapDragIndicator.getWidgetHeight() / 2 - font.lineHeight / 2, textZoom, 0xFFFFFFFF, EAlignment.LEFT, true);
+            //mapDragIndicator.render(graphics.graphics(), mouseX, mouseY, partialTicks);
+            ModGuiIcons.SHIFT_KEY.getAsSprite(16, 16).render(graphics, mapDragIndicator.x(), mapDragIndicator.y() + 16);
+            ModGuiIcons.MOUSE_LEFT.getAsSprite(16, 16).render(graphics, mapDragIndicator.x() + 16, mapDragIndicator.y() + 16);
+            ModGuiIcons.MOUSE_MIDDLE.getAsSprite(16, 16).render(graphics, mapDragIndicator.x() + 8, mapDragIndicator.y() + 32);
+            GuiUtils.drawString(graphics, graphics.defaultFont(), mapDragIndicator.x() + mapDragIndicator.width() + 20, mapDragIndicator.y() + mapDragIndicator.height() / 2 - graphics.defaultFont().lineHeight / 2, textMove, DLColor.WHITE, ETextAlignment.LEFT, true);
+            GuiUtils.drawString(graphics, graphics.defaultFont(), mapDragIndicator.x() + mapDragIndicator.width() + 20, 16 + mapDragIndicator.y() + mapDragIndicator.height() / 2 - graphics.defaultFont().lineHeight / 2, textSelect, DLColor.WHITE, ETextAlignment.LEFT, true);
+            GuiUtils.drawString(graphics, graphics.defaultFont(), mapDragIndicator.x() + mapDragIndicator.width() + 20, 32 + mapDragIndicator.y() + mapDragIndicator.height() / 2 - graphics.defaultFont().lineHeight / 2, textZoom, DLColor.WHITE, ETextAlignment.LEFT, true);
         }
 
-        renderMarker(graphics, mouseX, mouseY, partialTicks);
-        GuiUtils.disableScissor(graphics);
+        renderMarker(graphics, (int)mouseX, (int)mouseY);
     }
 
     @Override
-    public void renderFrontLayer(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderFrontLayer(graphics, mouseX, mouseY, partialTicks);
-
-        if (isMouseSelected()) {            
+    public void renderFrontLayer(DLGuiGraphics graphics, double mouseX, double mouseY, Rectangle renderBounds) {
+        if (isSelected()) {            
             int xMapCoord = mouseXMapCoord(mouseX);
             int yMapCoord = mouseYMapCoord(mouseY);
             List<MutableComponent> lines = new LinkedList<>(List.of(
                 TextUtils.text(String.format("X: %s, Y: %s", (int)(xMapCoord - map.getCenterPosOnMap().x), (int)(yMapCoord - map.getCenterPosOnMap().y)))
             ));
 
-            if (isDragging() && DLScreen.hasShiftDown()) {
+            if (isDragged() && DLWindowManager.hasShiftDown()) {
                 lines.add(TextUtils.translate(keyPos1, (int)(dispX1 - map.getCenterPosOnMap().x), (int)(dispY1 - map.getCenterPosOnMap().y)).withStyle(ChatFormatting.GREEN)
                     .append(TextUtils.text(" - ").withStyle(ChatFormatting.GRAY))
                     .append(TextUtils.translate(keyPos2, (int)(dispX2 - map.getCenterPosOnMap().x), (int)(dispY2 - map.getCenterPosOnMap().y)).withStyle(ChatFormatting.RED))
@@ -176,41 +213,41 @@ public class MapAreaSelectionWidget extends DLWidgetContainer {
                 lines.add(TextUtils.translate(keySize, dispX2 - dispX1 + 1, dispY2 - dispY1 + 1).withStyle(ChatFormatting.GOLD));
             }
 
-            GuiUtils.renderTooltip(parent, GuiAreaDefinition.of(this), lines, width, graphics, (int)mouseX, (int)mouseY);
+            GuiUtils.drawTooltip(graphics, graphics.defaultFont(), (int)mouseX, (int)mouseY, lines, 200);
         }
     }
 
-    private void renderMarker(Graphics graphics, int mouseX, int mouseY, float partialTicks) {
+    private void renderMarker(DLGuiGraphics graphics, int mouseX, int mouseY) {
         if (isMapPosInBounds((int)map.getCenterPosOnMap().x, (int)map.getCenterPosOnMap().y)) {
             ModGuiIcons.MAP_MARKER.render(graphics, mapXToAbs((int)map.getCenterPosOnMap().x) + map.getScale() / 2 - ModGuiIcons.ICON_SIZE / 2, mapYToAbs((int)map.getCenterPosOnMap().y) + map.getScale() / 2 - ModGuiIcons.ICON_SIZE / 2);
         } else {
             graphics.poseStack().pushPose();
             int rawX = mapXToAbs((int)map.getCenterPosOnMap().x) + map.getScale() / 2;
             int rawY = mapYToAbs((int)map.getCenterPosOnMap().y) + map.getScale() / 2;
-            int x = MathUtils.clamp(rawX, getX() + 4, getX() + getWidth() - 4);
-            int y = MathUtils.clamp(rawY, getY() + 4, getY() + getHeight() - 4);
+            int x = MathUtils.clamp(rawX, 4, width() - 4);
+            int y = MathUtils.clamp(rawY, 4, height() - 4);
 
             graphics.poseStack().translate(x, y, 0);
             
-            if (rawX < getX() + getWidth() / 4 && rawY < getY() + getHeight() / 4) { // top left
+            if (rawX < width() / 4 && rawY < height() / 4) { // top left
                 graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(90 + 45));
-            } else if (rawX >= getX() + getWidth() / 4 && rawX <= getX() + getWidth() / 4 * 3 && rawY < getY() + getHeight() / 4) { // top
+            } else if (rawX >= width() / 4 && rawX <= width() / 4 * 3 && rawY < height() / 4) { // top
                 graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(180));
-            } else if (rawX > getX() + getWidth() / 4 * 3&& rawY < getY() + getHeight() / 4) { // top right
+            } else if (rawX > width() / 4 * 3&& rawY < height() / 4) { // top right
                 graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(-90 - 45));
             }
             
-            else if (rawX < getX() + getWidth() / 4 && rawY >= getY() + getHeight() / 4 && rawY <= getY() + getHeight() / 4 * 3) { // left
+            else if (rawX < width() / 4 && rawY >= height() / 4 && rawY <= height() / 4 * 3) { // left
                 graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(90));
-            } else if (rawX > getX() + getWidth() / 4 * 3 && rawY >= getY() + getHeight() / 4 && rawY <= getY() + getHeight() / 4 * 3) { // right
+            } else if (rawX > width() / 4 * 3 && rawY >= height() / 4 && rawY <= height() / 4 * 3) { // right
                 graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(-90));
             }
 
-            else if (rawX < getX() + getWidth() / 4 && rawY > getY() + getHeight() / 4 * 3) { // bottom left
+            else if (rawX < width() / 4 && rawY > height() / 4 * 3) { // bottom left
                 graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(45));
-            } else if (rawX >= getX() + getWidth() / 4 && rawX <= getX() + getWidth() / 4 * 3 && rawY > getY() + getHeight() / 4 * 3) { // bottom
+            } else if (rawX >= width() / 4 && rawX <= width() / 4 * 3 && rawY > height() / 4 * 3) { // bottom
                 graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(0));
-            } else if (rawX > getX() + getWidth() / 4 * 3 && rawY > getY() + getHeight() / 4 * 3) { // bottom right
+            } else if (rawX > width() / 4 * 3 && rawY > height() / 4 * 3) { // bottom right
                 graphics.poseStack().mulPose(Axis.ZP.rotationDegrees(-45));
             }
 
@@ -218,69 +255,57 @@ public class MapAreaSelectionWidget extends DLWidgetContainer {
             graphics.poseStack().popPose();
         }
     }
-    
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (DLScreen.hasShiftDown() && button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            selX2 = mouseXMapCoord(mouseX);
-            selY2 = mouseYMapCoord(mouseY);
-        } else if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            setViewTo(mapX + dragX, mapY + dragY);
-        }
-
-        return true;
-    }
 
     private int mouseXMapCoord(double mouseX) {
-        double relX = mouseX - getX() - mapX;
+        double relX = mouseX - mapX;
         double corrX = relX - relX % map.getScale();
         return (int)(corrX / map.getScale());
     }
 
     private int mouseYMapCoord(double mouseY) {
-        double relY = mouseY - getY() - mapY;
+        double relY = mouseY - mapY;
         double corrY = relY - relY % map.getScale();
         return (int)(corrY / map.getScale());
     }
 
     private int mouseXToMap(double mouseX) {
-        double relX = mouseX - getX() - mapX;
+        double relX = mouseX - mapX;
         double corrX = relX - relX % map.getScale();
-        double res = corrX + mapX + getX();
-        return (int)(mapX < -getX() ? res != (double)(int)res ? res + 1 : res : res);
+        double res = corrX + mapX;
+        return (int)(mapX < 0 ? res != (double)(int)res ? res + 1 : res : res);
     }
 
     private int mouseYToMap(double mouseY) {
-        double relY = mouseY - getY() - mapY;
+        double relY = mouseY - mapY;
         double corrY = relY - relY % map.getScale();
-        double res = corrY + mapY + getY();
-        return (int)(mapY < -getY() ? res != (double)(int)res ? res + 1 : res : res);
+        double res = corrY + mapY;
+        return (int)(mapY < 0 ? res != (double)(int)res ? res + 1 : res : res);
     }
 
     private int mapXToAbs(int mapXCoord) {
-        double res = mapXCoord * map.getScale() + getX() + mapX;
-        return (int)(mapX < -getX() ? res != (double)(int)res ? res + 1 : res : res);
+        double res = mapXCoord * map.getScale() + mapX;
+        return (int)(mapX < 0 ? res != (double)(int)res ? res + 1 : res : res);
     }
 
     private int mapYToAbs(int mapYCoord) {
-        double res = mapYCoord * map.getScale() + getY() + mapY;
-        return (int)(mapY < -getY() ? res != (double)(int)res ? res + 1 : res : res);
+        double res = mapYCoord * map.getScale() + mapY;
+        return (int)(mapY < 0 ? res != (double)(int)res ? res + 1 : res : res);
     }
 
     private void centerViewToPoint(double x, double y) {
-        setViewTo(-map.getScale() * x + getWidth() / 2, -map.getScale() * y + getHeight() / 2);
+        setViewTo(-map.getScale() * x + width() / 2, -map.getScale() * y + height() / 2);
     }
 
     private void setViewTo(double x, double y) {
-        mapX = map.getScaledWidth() < width ? width / 2 - map.getScaledWidth() / 2 : MathUtils.clamp(x, -map.getScaledWidth() + getWidth(), 0);
-        mapY = map.getScaledHeight() < height ? height / 2 - map.getScaledHeight() / 2 : MathUtils.clamp(y, -map.getScaledHeight() + getHeight(), 0);
+        mapX = map.getScaledWidth() < width() ? width() / 2 - map.getScaledWidth() / 2 : MathUtils.clamp(x, -map.getScaledWidth() + width(), 0);
+        mapY = map.getScaledHeight() < height() ? height() / 2 - map.getScaledHeight() / 2 : MathUtils.clamp(y, -map.getScaledHeight() + height(), 0);
     }
 
     private boolean isMapPosInBounds(int mapXCoord, int mapYCoord) {
         int x = mapXToAbs(mapXCoord);
         int y = mapYToAbs(mapYCoord);
 
-        return x > getX() && x < getX() + getWidth() && y > getY() && y < getY() + getHeight();
+        return x > 0 && x < width() && y > 0 && y < height();
     }
 
     @Override
@@ -290,34 +315,6 @@ public class MapAreaSelectionWidget extends DLWidgetContainer {
             finishSelection(false);
         }
         return b;
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (DLScreen.hasShiftDown() && button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            isSelecting = true;
-            selX1 = mouseXMapCoord(mouseX);
-            selY1 = mouseYMapCoord(mouseY);
-            selX2 = selX1;
-            selY2 = selY1;
-        }
-        
-        this.setDragging(true);
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean keyReleased(int code, int scan, int mod) {
-        if (!DLScreen.hasShiftDown()) {
-            finishSelection(false);
-        }
-        return super.keyReleased(code, scan, mod);
-    }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        finishSelection(true);
-        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     private void finishSelection(boolean accept) {
@@ -330,29 +327,6 @@ public class MapAreaSelectionWidget extends DLWidgetContainer {
         selY1 = -1;
         selX2 = -1;
         selY2 = -1;
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
-        int coordX = mouseXMapCoord(getX() + getWidth() / 2);
-        int coordY = mouseYMapCoord(getY() + getHeight() / 2);
-        this.map.setScale(MathUtils.clamp((int)(map.getScale() + deltaY), 1, 8));
-        centerViewToPoint(coordX, coordY);
-        return true;
-    }
-
-    @Override
-    public NarrationPriority narrationPriority() {
-        return NarrationPriority.NONE;
-    }
-
-    @Override
-    public void updateNarration(NarrationElementOutput narrationElementOutput) {
-    }
-
-    @Override
-    public boolean consumeScrolling(double mouseX, double mouseY) {
-        return false;
     }
 
     public void close() {

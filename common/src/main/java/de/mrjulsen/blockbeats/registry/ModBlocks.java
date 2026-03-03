@@ -4,6 +4,7 @@ import java.util.function.Supplier;
 
 import de.mrjulsen.blockbeats.BlockBeats;
 import de.mrjulsen.blockbeats.block.SoundPlayerBlock;
+import dev.architectury.extensions.injected.InjectedItemPropertiesExtension;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
@@ -26,7 +27,7 @@ public class ModBlocks {
     
     public static final <T extends Block> RegistrySupplier<T> register(String name, Supplier<T> block) {
         RegistrySupplier<T> result = registerWithoutItem(name, block);
-        ModItems.ITEMS.register(name, () -> new BlockItem(result.get(), new Item.Properties().arch$tab(ModCreativeModeTab.MOD_TAB)));
+        ModItems.ITEMS.register(name, () -> new BlockItem(result.get(), ((InjectedItemPropertiesExtension)new Item.Properties()).arch$tab(ModCreativeModeTab.MOD_TAB)));
         return result;
     }
 

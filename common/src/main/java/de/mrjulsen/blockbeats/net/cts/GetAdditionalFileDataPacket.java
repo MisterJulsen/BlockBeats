@@ -1,51 +1,49 @@
 package de.mrjulsen.blockbeats.net.cts;
 
-import java.util.function.Supplier;
-
 import de.mrjulsen.blockbeats.core.data.FavoritesList;
 import de.mrjulsen.blockbeats.core.data.Usercache;
 import de.mrjulsen.blockbeats.net.callbacks.clinet.GetFavoritesCallback;
-import de.mrjulsen.blockbeats.net.callbacks.clinet.GetFavoritesCallback.IGetFavoritesCallback;
 import de.mrjulsen.blockbeats.net.stc.GetAdditionalFileDataResponsePacket;
-import de.mrjulsen.mcdragonlib.net.BaseNetworkPacket;
-import de.mrjulsen.mcdragonlib.net.DLNetworkManager;
-import dev.architectury.networking.NetworkManager.PacketContext;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import de.mrjulsen.blockbeats.registry.ModNetworkManager;
+import de.mrjulsen.mcdragonlib.data.DLStatus;
+import de.mrjulsen.mcdragonlib.network.NetworkDirection;
+import de.mrjulsen.mcdragonlib.network.NetworkPacketContext;
+import de.mrjulsen.mcdragonlib.network.NetworkPacketData;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 
-public class GetAdditionalFileDataPacket extends BaseNetworkPacket<GetAdditionalFileDataPacket> {
+public class GetAdditionalFileDataPacket extends NetworkPacketData {
 
-    private long requestId;
+	private static final String NBT_REQUEST_ID = "RequestId";
 
-    public GetAdditionalFileDataPacket() {}
+	private long requestId;
 
-    private GetAdditionalFileDataPacket(long requestId) {
-        this.requestId = requestId;
-    }
+	public GetAdditionalFileDataPacket(DLStatus status) { super(status); }
 
-    public static GetAdditionalFileDataPacket create(IGetFavoritesCallback callback) {
-        return new GetAdditionalFileDataPacket(GetFavoritesCallback.create(callback));
-    }
+	private GetAdditionalFileDataPacket(long requestId) {
+		super(DLStatus.OK);
+		this.requestId = requestId;
+	}
 
-    @Override
-    public void encode(GetAdditionalFileDataPacket packet, RegistryFriendlyByteBuf buf) {
-        buf.writeLong(packet.requestId);
-    }
+	public static GetAdditionalFileDataPacket create(GetFavoritesCallback.IGetFavoritesCallback callback) {
+		return new GetAdditionalFileDataPacket(GetFavoritesCallback.create(callback));
+	}
 
-    @Override
-    public GetAdditionalFileDataPacket decode(RegistryFriendlyByteBuf buf) {
-        return new GetAdditionalFileDataPacket(buf.readLong());
-    }
+	@Override
+    protected void write(CompoundTag tag) {
+		tag.putLong(NBT_REQUEST_ID, requestId);
+	}
 
-    @Override
-    public void handle(GetAdditionalFileDataPacket packet, Supplier<PacketContext> contextSupplier) {
-        contextSupplier.get().queue(() -> {            
-            DLNetworkManager.sendToPlayer((ServerPlayer)contextSupplier.get().getPlayer(), new GetAdditionalFileDataResponsePacket(
-                packet.requestId,
-                FavoritesList.getInstance(contextSupplier.get().getPlayer().getServer()).getFavorites(contextSupplier.get().getPlayer().getUUID()),
-                Usercache.getInstance(contextSupplier.get().getPlayer().getServer()).getNamesMapped()
-            ));
-        });
-    }
-    
+	@Override
+    protected void read(CompoundTag tag) {
+		this.requestId = tag.getLong(NBT_REQUEST_ID);
+	}
+
+	public static void handle(GetAdditionalFileDataPacket packet, NetworkPacketContext context) {
+		ModNetworkManager.RESPONSE_ADDITIONAL_FILE_DATA.send(NetworkDirection.toPlayer((ServerPlayer)context.getPlayer()), new GetAdditionalFileDataResponsePacket(
+			packet.requestId,
+			FavoritesList.getInstance(context.getPlayer().getServer()).getFavorites(context.getPlayer().getUUID()),
+			Usercache.getInstance(context.getPlayer().getServer()).getNamesMapped()
+		));
+	}
 }

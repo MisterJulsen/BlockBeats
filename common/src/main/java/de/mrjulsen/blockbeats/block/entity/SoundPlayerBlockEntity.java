@@ -25,9 +25,8 @@ import de.mrjulsen.dragnsounds.core.ext.CustomSoundInstance;
 import de.mrjulsen.dragnsounds.core.ext.CustomSoundSource;
 import de.mrjulsen.dragnsounds.core.filesystem.SoundFile;
 import de.mrjulsen.dragnsounds.core.filesystem.SoundLocation;
-import de.mrjulsen.mcdragonlib.DragonLib;
-import de.mrjulsen.mcdragonlib.data.Cache;
-import de.mrjulsen.mcdragonlib.data.DataCache;
+import de.mrjulsen.mcdragonlib.util.Cache;
+import de.mrjulsen.mcdragonlib.util.DataCache;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.nbt.CompoundTag;
@@ -168,7 +167,7 @@ public class SoundPlayerBlockEntity extends TickableBlockEntity<SoundPlayerBlock
     }
 
     public int playbackProgressTicksNow() {
-        int millisPerTick = (int)(TimeUnit.SECONDS.toMillis(1) / DragonLib.mcTps());
+        int millisPerTick = (int)(TimeUnit.SECONDS.toMillis(1) / 20);
         long progressMillis = System.currentTimeMillis() - startTimeMillis;
         int progressTicks = (int)(progressMillis / millisPerTick / getPitch());
         return progressTicks;

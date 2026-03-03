@@ -8,22 +8,21 @@ import de.mrjulsen.blockbeats.core.data.playback.BoxPlaybackAreaBuilder;
 import de.mrjulsen.blockbeats.core.data.playback.EntityRidingPlaybackAreaBuilder;
 import de.mrjulsen.blockbeats.core.data.playback.IPlaybackAreaBuilder;
 import de.mrjulsen.blockbeats.core.data.playback.RadiusPlaybackAreaBuilder;
-import de.mrjulsen.mcdragonlib.client.render.Sprite;
-import de.mrjulsen.mcdragonlib.core.IIterableEnum;
-import de.mrjulsen.mcdragonlib.core.ITranslatableEnum;
-import net.minecraft.util.StringRepresentable;
+import de.mrjulsen.mcdragonlib.client.util.DLSprite;
+import de.mrjulsen.mcdragonlib.data.IIterableEnum;
+import de.mrjulsen.mcdragonlib.data.ITranslatableEnum;
 
-public enum EPlaybackAreaType implements ITranslatableEnum, StringRepresentable, IIterableEnum<EPlaybackAreaType> {
+public enum EPlaybackAreaType implements ITranslatableEnum, IIterableEnum<EPlaybackAreaType> {
     RADIUS(0, "radius", ModGuiIcons.RADIUS.getAsSprite(16, 16), RadiusPlaybackAreaBuilder.class),
     BOX(1, "box", ModGuiIcons.BOX.getAsSprite(16, 16), BoxPlaybackAreaBuilder.class),
     ENTITY(2, "entity", ModGuiIcons.CREEPER.getAsSprite(16, 16), EntityRidingPlaybackAreaBuilder.class);
 
     private int id;
     private String name;
-    private Sprite sprite;
+    private DLSprite sprite;
     private Class<? extends IPlaybackAreaBuilder> type;
 
-    private EPlaybackAreaType(int id, String name, Sprite sprite, Class<? extends IPlaybackAreaBuilder> clazz) {
+    private EPlaybackAreaType(int id, String name, DLSprite sprite, Class<? extends IPlaybackAreaBuilder> clazz) {
         this.id = id;
         this.name = name;
         this.sprite = sprite;
@@ -38,7 +37,7 @@ public enum EPlaybackAreaType implements ITranslatableEnum, StringRepresentable,
         return name;
     }
 
-    public Sprite getIcon() {
+    public DLSprite getIcon() {
         return sprite;
     }
 
@@ -65,23 +64,13 @@ public enum EPlaybackAreaType implements ITranslatableEnum, StringRepresentable,
     }
 
     @Override
-    public String getSerializedName() {
-        return getName();
-    }
-
-    @Override
-    public String getEnumName() {
-        return "playback_area_type";
-    }
-
-    @Override
-    public String getEnumValueName() {
-        return getName();
-    }
-
-    @Override
     public EPlaybackAreaType[] getValues() {
         return values();
+    }
+
+    @Override
+    public Data getTranslationData() {
+        return new Data(BlockBeats.MOD_ID, "playback_area_type", name);
     }
     
 }

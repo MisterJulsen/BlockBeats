@@ -8,7 +8,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'BlockBeats 2.21.1 DL3'
+rootProject.name = 'BlockBeats 1.21.1 DL3'
 
 include 'common'
 include 'fabric'

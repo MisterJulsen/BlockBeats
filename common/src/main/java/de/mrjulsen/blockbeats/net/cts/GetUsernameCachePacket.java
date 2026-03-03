@@ -1,51 +1,49 @@
 package de.mrjulsen.blockbeats.net.cts;
 
-import java.util.Map;
-import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import de.mrjulsen.blockbeats.core.data.Usercache;
 import de.mrjulsen.blockbeats.net.callbacks.clinet.GetUsernameCacheCallback;
 import de.mrjulsen.blockbeats.net.stc.GetUsernameCacheResponsePacket;
-import de.mrjulsen.mcdragonlib.net.BaseNetworkPacket;
-import de.mrjulsen.mcdragonlib.net.DLNetworkManager;
-import dev.architectury.networking.NetworkManager.PacketContext;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import de.mrjulsen.blockbeats.registry.ModNetworkManager;
+import de.mrjulsen.mcdragonlib.data.DLStatus;
+import de.mrjulsen.mcdragonlib.network.NetworkDirection;
+import de.mrjulsen.mcdragonlib.network.NetworkPacketContext;
+import de.mrjulsen.mcdragonlib.network.NetworkPacketData;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 
-public class GetUsernameCachePacket extends BaseNetworkPacket<GetUsernameCachePacket> {
+public class GetUsernameCachePacket extends NetworkPacketData {
 
-    private long requestId;
+	private static final String NBT_REQUEST_ID = "RequestId";
 
-    public GetUsernameCachePacket() {}
+	private long requestId;
 
-    private GetUsernameCachePacket(long requestId) {
-        this.requestId = requestId;
-    }
-
-    public static GetUsernameCachePacket create(Consumer<Map<UUID, String>> callback) {
-        return new GetUsernameCachePacket(GetUsernameCacheCallback.create(callback));
-    }
-
-    @Override
-    public void encode(GetUsernameCachePacket packet, RegistryFriendlyByteBuf buf) {
-        buf.writeLong(packet.requestId);
-    }
-
-    @Override
-    public GetUsernameCachePacket decode(RegistryFriendlyByteBuf buf) {
-        return new GetUsernameCachePacket(buf.readLong());
-    }
-
-    @Override
-    public void handle(GetUsernameCachePacket packet, Supplier<PacketContext> contextSupplier) {
-        contextSupplier.get().queue(() -> {            
-            DLNetworkManager.sendToPlayer((ServerPlayer)contextSupplier.get().getPlayer(), new GetUsernameCacheResponsePacket(
-                packet.requestId,
-                Usercache.getInstance(contextSupplier.get().getPlayer().getServer()).getNamesMapped()
-            ));
-        });
-    }
+	public GetUsernameCachePacket(DLStatus status) { super(status); }
     
+	private GetUsernameCachePacket(long requestId) {
+		super(DLStatus.OK);
+		this.requestId = requestId;
+	}
+
+	public static GetUsernameCachePacket create(Consumer<java.util.Map<java.util.UUID, String>> callback) {
+		return new GetUsernameCachePacket(GetUsernameCacheCallback.create(callback));
+	}
+
+	@Override
+    protected void write(CompoundTag tag) {
+		tag.putLong(NBT_REQUEST_ID, requestId);
+	}
+
+	@Override
+    protected void read(CompoundTag tag) {
+		this.requestId = tag.getLong(NBT_REQUEST_ID);
+	}
+
+	public static void handle(GetUsernameCachePacket packet, NetworkPacketContext context) {
+		ModNetworkManager.RESPONSE_USERNAME_CACHE.send(NetworkDirection.toPlayer((ServerPlayer)context.getPlayer()), new GetUsernameCacheResponsePacket(
+			packet.requestId,
+			Usercache.getInstance(context.getPlayer().getServer()).getNamesMapped()
+		));
+	}
 }
