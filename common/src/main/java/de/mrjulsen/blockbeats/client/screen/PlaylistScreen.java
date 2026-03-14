@@ -137,7 +137,6 @@ public class PlaylistScreen extends DLPopupScreen {
         shuffleTooltip = DLTooltip.of(lines).assignedTo(btn);
     }
 
-    @SuppressWarnings("resource")
     @Override
     protected void init() {
         super.init();
@@ -172,11 +171,11 @@ public class PlaylistScreen extends DLPopupScreen {
                     }, true)
             )
         ));
-        scrollBar = addRenderableWidget(new DLVerticalScrollBar(width - 8, HEADER_HEIGHT, 8, height - HEADER_HEIGHT - FOOTER_HEIGHT, GuiAreaDefinition.empty()/*new GuiAreaDefinition(0, HEADER_HEIGHT, width, height - HEADER_HEIGHT - FOOTER_HEIGHT)*/))
+        scrollBar = addRenderableWidget(new DLVerticalScrollBar(width - 8, HEADER_HEIGHT, 8, height - HEADER_HEIGHT - FOOTER_HEIGHT, new GuiAreaDefinition(0, HEADER_HEIGHT, width, height - HEADER_HEIGHT - FOOTER_HEIGHT)))
             .setAutoScrollerSize(true)
             .setScreenSize(container.getHeight())
             .setStepSize(15)
-            .updateMaxScroll(container.maxRequiredHeight())
+            .setMaxScroll(container.maxRequiredHeight())
             .withOnValueChanged((scrollbar) -> container.setYScrollOffset(scrollbar.getScrollValue()))
         ;
 

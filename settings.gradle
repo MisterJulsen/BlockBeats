@@ -7,7 +7,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'blockbeats'
+rootProject.name = 'BlockBeats'
 
 include 'common'
 include 'fabric'
