@@ -3,11 +3,11 @@ package de.mrjulsen.blockbeats.client.widgets.popup;
 import java.util.function.Consumer;
 
 import de.mrjulsen.blockbeats.client.screen.DLPopupScreen;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.WidgetContainer;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.DLWidgetContainer;
 import de.mrjulsen.mcdragonlib.client.util.Graphics;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 
-public abstract class PopupWidget extends WidgetContainer {
+public abstract class PopupWidget extends DLWidgetContainer {
 
     private final Consumer<PopupWidget> close;
     private final DLPopupScreen parent;

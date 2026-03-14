@@ -1,7 +1,7 @@
 # 🔊 BlockBeats
 
 <p align="center">
-  <a><img src="https://raw.githubusercontent.com/MisterJulsen/BlockBeats/1.18.2/BlockBeats-256px.png" alt="Logo"></a>
+  <a><img src="https://raw.githubusercontent.com/MisterJulsen/DragNSounds-API/Documentation/assets/logo.png" alt="Logo"></a>
   <a></a>
   <a href="https://discord.gg/AeSbNgvc7f"><img src="https://i.imgur.com/YnDoeHs.png" alt="Discord"></a>
   <a href="https://modrinth.com/mod/blockbeats"><img src="https://i.imgur.com/uLIB4gb.png" alt="CurseForge"></a>

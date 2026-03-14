@@ -1,36 +1,34 @@
 {
   "schemaVersion": 1,
-  "id": "blockbeats",
+  "id": "${modid}",
   "version": "${version}",
-  "name": "BlockBeats",
-  "description": "BlockBeats allows all players to upload their own music and sounds to the server in real time and play them there for all players at any time without having to load and update resource packs.",
+  "name": "${display_name}",
+  "description": "${description}",
   "authors": [
-    "MrJulsen"
+    "${authors}"
   ],
   "contact": {
-    "homepage": "https://www.curseforge.com/minecraft/mc-mods/BlockBeats",
-    "sources": "https://github.com/MisterJulsen/BlockBeats",
-    "issues": "https://github.com/MisterJulsen/BlockBeats/issues" 
+    "homepage": "${homepage}",
+    "issues": "${issues}",
+    "sources": "${source}"
   },
-  "license": "GNU General Public License v3.0",
-  "icon": "icon.png",
+  "license": "${license}",
+  "icon": "${icon}",
   "environment": "*",
   "entrypoints": {
     "main": [
       "de.mrjulsen.blockbeats.fabric.BlockBeatsFabric"
-    ],
-    "client": [
     ]
   },
   "mixins": [
-    "blockbeats.mixins.json"
+    "${modid}.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.15.11",
-    "minecraft": "~1.20.1",
-    "java": ">=17",
-    "dragnsounds": ">=1.20.1-0.1.7",
-    "dragonlib": ">=1.20.1-2.1.11",
+    "fabricloader": ">=${fabric_loader_version}",
+    "minecraft": "~${minecraft_version}",
+    "java": ">=${java_version}",
+    "dragonlib": ">=${dragonlib_version}",
+    "dragnsounds": ">=${dragnsounds_version}",
     "fabric-api": "*"
   },
   "custom": {
@@ -40,7 +38,9 @@
         "DragonLib 2": "https://github.com/MisterJulsen/MC-DragonLib2",
         "DragNSounds API": "https://misterjulsen.github.io/DragNSounds-API/",
         "JAVE2": "https://github.com/a-schild/jave2"
-      }
+      },
+      "update_checker": true
     }
-  }
+  },
+  "accessWidener": "${modid}.accesswidener"
 }

@@ -181,7 +181,7 @@ public class FileSelectionPopup extends PopupWidget {
             .setAutoScrollerSize(true)
             .setScreenSize(container.getFirst().getHeight())
             .setStepSize(15)
-            .updateMaxScroll(container.getFirst().maxRequiredHeight())
+            .setMaxScroll(container.getFirst().maxRequiredHeight())
             .withOnValueChanged((scrollbar) -> container.getFirst().setYScrollOffset(scrollbar.getScrollValue()))
         ;
 

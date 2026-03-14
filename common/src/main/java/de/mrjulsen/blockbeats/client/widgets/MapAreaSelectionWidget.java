@@ -13,7 +13,7 @@ import de.mrjulsen.blockbeats.client.ModGuiIcons;
 import de.mrjulsen.blockbeats.client.widgets.animated.MouseMotionIndicator;
 import de.mrjulsen.blockbeats.util.Utils;
 import de.mrjulsen.mcdragonlib.client.gui.DLScreen;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.WidgetContainer;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.DLWidgetContainer;
 import de.mrjulsen.mcdragonlib.client.render.MapImage;
 import de.mrjulsen.mcdragonlib.client.util.Graphics;
 import de.mrjulsen.mcdragonlib.client.util.GuiAreaDefinition;
@@ -28,7 +28,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.phys.Vec2;
 
-public class MapAreaSelectionWidget extends WidgetContainer {
+public class MapAreaSelectionWidget extends DLWidgetContainer {
 
     private final MutableComponent textDrag = Utils.trans("map", "drag_select");
     private final MutableComponent textSelect = Utils.trans("map", "select");
@@ -67,7 +67,6 @@ public class MapAreaSelectionWidget extends WidgetContainer {
 
     private final DLScreen parent;
 
-    @SuppressWarnings("resource")
     public MapAreaSelectionWidget(DLScreen parent, int x, int y, int width, int height, BlockPos center, int mapWidth, int mapHeight, BiConsumer<Vec2, Vec2> onSelected) {
         super(x, y, width, height);
         this.parent = parent;
@@ -353,7 +352,7 @@ public class MapAreaSelectionWidget extends WidgetContainer {
 
     @Override
     public boolean consumeScrolling(double mouseX, double mouseY) {
-        return true;
+        return false;
     }
 
     public void close() {
