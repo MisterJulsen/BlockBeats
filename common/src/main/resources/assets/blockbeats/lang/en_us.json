@@ -10,7 +10,7 @@
     "gui.blockbeats.playlist_screen.refresh": "Refresh",
     "gui.blockbeats.playlist_screen.move_up": "Move Up",
     "gui.blockbeats.playlist_screen.move_down": "Move Down",
-    "gui.blockbeats.playlist_screen.favirote": "Favorite",
+    "gui.blockbeats.playlist_screen.favorite": "Favorite",
     "gui.blockbeats.playlist_screen.add": "Add",
     "gui.blockbeats.playlist_screen.description.add": "Select and upload new files for your playlist.",
     "gui.blockbeats.playlist_screen.description.playback_area": "Settings in which area, relative to this block, players should hear the sounds.",

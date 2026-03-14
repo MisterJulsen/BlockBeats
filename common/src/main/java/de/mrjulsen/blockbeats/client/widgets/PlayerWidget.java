@@ -12,8 +12,8 @@ import de.mrjulsen.blockbeats.client.ModGuiIcons;
 import de.mrjulsen.blockbeats.client.screen.DLPopupScreen;
 import de.mrjulsen.mcdragonlib.DragonLib;
 import de.mrjulsen.mcdragonlib.client.gui.widgets.DLButton;
+import de.mrjulsen.mcdragonlib.client.gui.widgets.DLScrollableWidgetContainer;
 import de.mrjulsen.mcdragonlib.client.gui.widgets.DLTooltip;
-import de.mrjulsen.mcdragonlib.client.gui.widgets.ScrollableWidgetContainer;
 import de.mrjulsen.mcdragonlib.client.render.Sprite;
 import de.mrjulsen.mcdragonlib.client.util.Graphics;
 import de.mrjulsen.mcdragonlib.client.util.GuiAreaDefinition;
@@ -33,13 +33,13 @@ public class PlayerWidget extends DLButton {
     private final Sprite icon;
     private final String name;
     private final DLPopupScreen parent;
-    private final ScrollableWidgetContainer parentContainer;
+    private final DLScrollableWidgetContainer parentContainer;
 
     // Buttons
     private int taskIndex = 1;
     private Collection<Task> tasks = new ArrayList<>();
 
-    public PlayerWidget(DLPopupScreen parent, ScrollableWidgetContainer parentContainer, int pX, int pY, int pWidth, UUID playerId, String name, @Nullable ResourceLocation skinLocation, Consumer<PlayerWidget> pOnPress, Collection<TaskBuilder> fileTasks) {
+    public PlayerWidget(DLPopupScreen parent, DLScrollableWidgetContainer parentContainer, int pX, int pY, int pWidth, UUID playerId, String name, @Nullable ResourceLocation skinLocation, Consumer<PlayerWidget> pOnPress, Collection<TaskBuilder> fileTasks) {
         super(pX, pY, pWidth, HEIGHT, TextUtils.empty(), pOnPress);        
         this.parent = parent;
         this.playerId = playerId;
